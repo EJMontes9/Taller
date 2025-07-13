@@ -89,6 +89,16 @@ La API backend proporciona los siguientes endpoints:
 - `PUT /api/clientes/{id}`: Actualizar un cliente existente
 - `DELETE /api/clientes/{id}`: Eliminar un cliente
 
+## Documentación de la API (Swagger)
+
+La API incluye documentación interactiva mediante Swagger UI, accesible en:
+
+```
+http://localhost:5000/swagger
+```
+
+Esta interfaz permite explorar y probar todos los endpoints disponibles en la API.
+
 ## Solución de Problemas
 
 ### Error en Nginx: "unknown directive "﻿server""

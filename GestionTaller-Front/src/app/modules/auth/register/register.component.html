@@ -1,0 +1,129 @@
+﻿<div class="flex justify-center items-center min-h-screen" style="background-image: url('https://images.unsplash.com/photo-1527383418406-f85a3b146499?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); background-size: cover; background-position: center; background-repeat: no-repeat; position: relative;">
+  <!-- Overlay to ensure text readability -->
+  <div class="absolute inset-0 bg-black opacity-50"></div>
+
+  <p-toast></p-toast>
+
+  <div class="w-full max-w-md z-10 px-4">
+    <p-card styleClass="shadow-2xl rounded-lg overflow-hidden">
+      <ng-template pTemplate="header">
+        <div class="text-center bg-primary">
+          <img [src]="logoPath" alt="logo de pistones" class="w-24 mx-auto rounded-full pt-6">
+        </div>
+      </ng-template>
+
+      <div class="pb-6 px-6 ">
+        <h3 class="text-2xl font-semibold mb-6 text-center text-gray-800">Registro de Usuario</h3>
+
+        <form (ngSubmit)="onSubmit()" class="space-y-4">
+          <!-- Username field -->
+          <div class="field">
+            <label for="username" class="block text-sm font-medium mb-2 text-gray-700">Usuario *</label>
+            <p-iconfield class="w-full">
+              <p-inputicon styleClass="pi pi-user"></p-inputicon>
+              <input 
+                id="username" 
+                type="text" 
+                pInputText 
+                [(ngModel)]="username" 
+                name="username" 
+                class="w-full p-3" 
+                placeholder="Ingrese su nombre de usuario"
+                [disabled]="loading"
+              />
+            </p-iconfield>
+          </div>
+
+          <!-- Name field -->
+          <div class="field">
+            <label for="name" class="block text-sm font-medium mb-2 text-gray-700">Nombre Completo *</label>
+            <p-iconfield class="w-full">
+              <p-inputicon styleClass="pi pi-id-card"></p-inputicon>
+              <input 
+                id="name" 
+                type="text" 
+                pInputText 
+                [(ngModel)]="name" 
+                name="name" 
+                class="w-full p-3" 
+                placeholder="Ingrese su nombre completo"
+                [disabled]="loading"
+              />
+            </p-iconfield>
+          </div>
+
+          <!-- Email field -->
+          <div class="field">
+            <label for="email" class="block text-sm font-medium mb-2 text-gray-700">Email</label>
+            <p-iconfield class="w-full">
+              <p-inputicon styleClass="pi pi-envelope"></p-inputicon>
+              <input 
+                id="email" 
+                type="email" 
+                pInputText 
+                [(ngModel)]="email" 
+                name="email" 
+                class="w-full p-3" 
+                placeholder="Ingrese su correo electrónico"
+                [disabled]="loading"
+              />
+            </p-iconfield>
+          </div>
+
+          <!-- Password field -->
+          <div class="field">
+            <label for="password" class="block text-sm font-medium mb-2 text-gray-700">Contraseña *</label>
+            <p-iconfield class="w-full">
+              <p-inputicon styleClass="pi pi-lock"></p-inputicon>
+              <p-password 
+                id="password" 
+                [(ngModel)]="password" 
+                name="password" 
+                [toggleMask]="true"
+                [feedback]="true"
+                [disabled]="loading"
+                styleClass="w-full"
+                placeholder="Ingrese su contraseña"
+                [inputStyleClass]="'w-full p-3'"
+              ></p-password>
+            </p-iconfield>
+          </div>
+
+          <!-- Confirm Password field -->
+          <div class="field">
+            <label for="confirmPassword" class="block text-sm font-medium mb-2 text-gray-700">Confirmar Contraseña *</label>
+            <p-iconfield class="w-full">
+              <p-inputicon styleClass="pi pi-lock"></p-inputicon>
+              <p-password 
+                id="confirmPassword" 
+                [(ngModel)]="confirmPassword" 
+                name="confirmPassword" 
+                [toggleMask]="true"
+                [feedback]="false"
+                [disabled]="loading"
+                styleClass="w-full"
+                placeholder="Confirme su contraseña"
+                [inputStyleClass]="'w-full p-3'"
+              ></p-password>
+            </p-iconfield>
+          </div>
+
+          <div class="field mt-8">
+            <button 
+              pButton 
+              type="submit" 
+              label="Registrarse" 
+              icon="pi pi-user-plus" 
+              class="w-full p-3 text-lg" 
+              [loading]="loading"
+            ></button>
+          </div>
+        </form>
+
+        <div class="mt-4 text-center">
+          <a routerLink="/login" class="text-primary hover:underline">¿Ya tienes una cuenta? Inicia sesión</a>
+        </div>
+      </div>
+    </p-card>
+  </div>
+</div>

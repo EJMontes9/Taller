@@ -2,12 +2,17 @@ import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { AuthGuard } from './core/auth.guard';
 import { LoginComponent } from './modules/auth/login/login.component';
+import { RegisterComponent } from './modules/auth/register/register.component';
 
 export const routes: Routes = [
   // Auth routes
   {
     path: 'login',
     component: LoginComponent
+  },
+  {
+    path: 'register',
+    component: RegisterComponent
   },
   // Protected routes
   {

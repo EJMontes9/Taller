@@ -1,18 +1,18 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { PasswordModule } from 'primeng/password';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { AuthService } from '../../../core/auth.service';
+import { AuthService, RegisterRequest } from '../../../core/auth.service';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-register',
   standalone: true,
   imports: [
     FormsModule,
@@ -26,19 +26,20 @@ import { InputIconModule } from 'primeng/inputicon';
     RouterModule
   ],
   providers: [MessageService],
-  templateUrl: './login.component.html'
+  templateUrl: './register.component.html'
 })
-export class LoginComponent {
+export class RegisterComponent {
   username: string = '';
   password: string = '';
+  confirmPassword: string = '';
+  name: string = '';
+  email: string = '';
   loading: boolean = false;
-  returnUrl: string = '/';
   logoPath: string = '/assets/images/logo.png';
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute,
     private messageService: MessageService
   ) {
     // Redirect to home if already logged in
@@ -47,35 +48,46 @@ export class LoginComponent {
     }
   }
 
-  ngOnInit() {
-    // Get return url from route parameters or default to '/'
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-  }
-
   onSubmit() {
-    // Stop if form is invalid
-    if (!this.username || !this.password) {
+    // Validate form
+    if (!this.username || !this.password || !this.confirmPassword || !this.name) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
-        detail: 'Por favor ingrese usuario y contraseña'
+        detail: 'Por favor complete todos los campos obligatorios'
+      });
+      return;
+    }
+
+    if (this.password !== this.confirmPassword) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Las contraseñas no coinciden'
       });
       return;
     }
 
     this.loading = true;
 
-    this.authService.login(this.username, this.password)
+    const registerData: RegisterRequest = {
+      username: this.username,
+      password: this.password,
+      name: this.name,
+      email: this.email
+    };
+
+    this.authService.register(registerData)
       .subscribe({
         next: () => {
-          // Navigate to return url
-          this.router.navigateByUrl(this.returnUrl);
+          // Navigate to home page
+          this.router.navigate(['/']);
         },
         error: (error) => {
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'Usuario o contraseña incorrectos'
+            detail: error.message || 'Error al registrar usuario'
           });
           this.loading = false;
         }

@@ -1,11 +1,28 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { catchError, tap, map } from 'rxjs/operators';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 export interface User {
   username: string;
   name: string;
   role: string;
+  email?: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: User;
+}
+
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  name: string;
+  email: string;
 }
 
 @Injectable({
@@ -14,14 +31,9 @@ export interface User {
 export class AuthService {
   private currentUserSubject: BehaviorSubject<User | null>;
   public currentUser: Observable<User | null>;
-  
-  // Hardcoded user credentials as requested
-  private readonly validCredentials = {
-    username: 'admin',
-    password: 'admin123'
-  };
+  private apiUrl = environment.apiUrl;
 
-  constructor() {
+  constructor(private http: HttpClient) {
     // Check if user is already logged in (from localStorage)
     const storedUser = localStorage.getItem('currentUser');
     this.currentUserSubject = new BehaviorSubject<User | null>(
@@ -35,38 +47,72 @@ export class AuthService {
   }
 
   login(username: string, password: string): Observable<User> {
-    // Check if credentials match the hardcoded values
-    if (username === this.validCredentials.username && 
-        password === this.validCredentials.password) {
-      
-      // Create user object
-      const user: User = {
-        username: username,
-        name: 'Administrator',
-        role: 'admin'
-      };
-      
-      // Store user in localStorage
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      
-      // Update the BehaviorSubject
-      this.currentUserSubject.next(user);
-      
-      // Return the user with a small delay to simulate API call
-      return of(user).pipe(
-        delay(500),
-        tap(() => console.log('User logged in successfully'))
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, { username, password })
+      .pipe(
+        tap(response => {
+          if (response.success) {
+            // Store token and user in localStorage
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
+
+            // Update the BehaviorSubject
+            this.currentUserSubject.next(response.user);
+
+            console.log('User logged in successfully');
+          }
+        }),
+        catchError(this.handleError),
+        // Map to return just the user
+        map(response => response.user)
       );
+  }
+
+  register(registerData: RegisterRequest): Observable<User> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, registerData)
+      .pipe(
+        tap(response => {
+          if (response.success) {
+            // Store token and user in localStorage
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
+
+            // Update the BehaviorSubject
+            this.currentUserSubject.next(response.user);
+
+            console.log('User registered successfully');
+          }
+        }),
+        catchError(this.handleError),
+        // Map to return just the user
+        map(response => response.user)
+      );
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'An unknown error occurred';
+
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = `Error: ${error.error.message}`;
     } else {
-      // Throw error for invalid credentials
-      throw new Error('Username or password is incorrect');
+      // Server-side error
+      if (error.error && error.error.message) {
+        errorMessage = error.error.message;
+      } else if (error.status === 401) {
+        errorMessage = 'Username or password is incorrect';
+      } else if (error.status === 400) {
+        errorMessage = 'Invalid request data';
+      }
     }
+
+    console.error(errorMessage);
+    return throwError(() => new Error(errorMessage));
   }
 
   logout(): void {
     // Remove user from localStorage
     localStorage.removeItem('currentUser');
-    
+
     // Update the BehaviorSubject
     this.currentUserSubject.next(null);
   }
