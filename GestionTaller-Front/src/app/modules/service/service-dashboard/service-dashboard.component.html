@@ -1,0 +1,132 @@
+<div class="card">
+  <h2 class="text-2xl font-bold mb-4">Panel de Control de Servicios</h2>
+  <p class="mb-6">Bienvenido al centro de gestión de servicios del concesionario. Aquí puede monitorear y administrar todas las operaciones de servicio.</p>
+    <div class="flex flex-column gap-2">
+        <button pButton pRipple label="Nueva Cita" icon="pi pi-calendar-plus" class="p-button-primary" routerLink="/service/appointments"></button>
+        <button pButton pRipple label="Nueva Orden" icon="pi pi-file-edit" class="p-button-success" routerLink="/service/orders"></button>
+        <button pButton pRipple label="Historial" icon="pi pi-history" class="p-button-info" routerLink="/service/history"></button>
+    </div>
+
+  <div class="grid grid-cols-6 gap-4">
+    <!-- Service Stats-->
+    <div class="col-span-6">
+      <p-card header="Estadísticas de Servicio" styleClass="h-full">
+        <div class="grid grid-cols-4 gap-4">
+          <div>
+            <div class="text-center p-3 border-round bg-primary-50">
+              <div class="text-lg font-bold mb-1">Citas Hoy</div>
+              <div class="text-3xl font-bold text-primary">5</div>
+            </div>
+          </div>
+          <div >
+            <div class="text-center p-3 border-round bg-success-50">
+              <div class="text-lg font-bold mb-1">Servicios Completados</div>
+              <div class="text-3xl font-bold text-success">45</div>
+            </div>
+          </div>
+          <div >
+            <div class="text-center p-3 border-round bg-info-50">
+              <div class="text-lg font-bold mb-1">En Progreso</div>
+              <div class="text-3xl font-bold text-info">25</div>
+            </div>
+          </div>
+          <div >
+            <div class="text-center p-3 border-round bg-warning-50">
+              <div class="text-lg font-bold mb-1">Tiempo Promedio</div>
+              <div class="text-3xl font-bold text-warning">2.5h</div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Second row: Tables -->
+    <div class="col-span-4">
+      <p-card header="Próximas Citas" styleClass="h-full">
+        <p-table [value]="upcomingAppointments" [tableStyle]="{'min-width': '100%'}" [paginator]="true" [rows]="5" responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Cliente</th>
+              <th>Vehículo</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-appointment>
+            <tr>
+              <td>{{appointment.customerName}}</td>
+              <td>{{appointment.vehicleInfo}}</td>
+              <td>{{formatDate(appointment.date)}}</td>
+              <td>{{appointment.time}}</td>
+              <td>{{appointment.serviceType}}</td>
+              <td>
+                <p-tag [value]="getStatusLabel(appointment.status)" [severity]="getStatusSeverity(appointment.status)"></p-tag>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6" class="text-center p-4">No hay citas programadas.</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="footer">
+            <div class="flex justify-content-end">
+              <button pButton pRipple type="button" label="Ver Todas" icon="pi pi-arrow-right" class="p-button-text" routerLink="/service/appointments"></button>
+            </div>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+      <div class="col-span-2">
+          <p-card header="Tipos de Servicio" styleClass="h-full">
+              <p-chart type="pie" [data]="serviceTypeData" [options]="serviceTypeOptions" height="250px"></p-chart>
+          </p-card>
+      </div>
+    <div class="col-span-2">
+        <p-card header="Estado de Servicios" styleClass="h-full">
+            <p-chart type="pie" [data]="serviceStatusData" [options]="serviceStatusOptions" height="250px"></p-chart>
+        </p-card>
+    </div>
+
+    <div class="col-span-4">
+      <p-card header="Órdenes de Reparación Activas" styleClass="h-full">
+        <p-table [value]="activeRepairOrders" [tableStyle]="{'min-width': '100%'}" [paginator]="true" [rows]="5" responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Número</th>
+              <th>Cliente</th>
+              <th>Vehículo</th>
+              <th>Técnico</th>
+              <th>Estado</th>
+              <th>Finalización Est.</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-order>
+            <tr>
+              <td>{{order.orderNumber}}</td>
+              <td>{{order.customerName}}</td>
+              <td>{{order.vehicleInfo}}</td>
+              <td>{{order.technician}}</td>
+              <td>
+                <p-tag [value]="getStatusLabel(order.status)" [severity]="getStatusSeverity(order.status)"></p-tag>
+              </td>
+              <td>{{formatDate(order.estimatedCompletion)}}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6" class="text-center p-4">No hay órdenes de reparación activas.</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="footer">
+            <div class="flex justify-content-end">
+              <button pButton pRipple type="button" label="Ver Todas" icon="pi pi-arrow-right" class="p-button-text" routerLink="/service/orders"></button>
+            </div>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  </div>
+</div>

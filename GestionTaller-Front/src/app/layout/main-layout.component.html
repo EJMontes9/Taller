@@ -1,0 +1,28 @@
+<div class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-primary shadow-md bg-blue-300">
+    <div class="container mx-auto p-4">
+        <p-menubar [model]="items">
+            <ng-template #start>
+                <div class="text-gray-800 text-2xl font-bold">VelocityAutomotive</div>
+            </ng-template>
+            <ng-template #end>
+                <button pButton pRipple label="Cerrar Sesión" icon="pi pi-sign-out" class="p-button-danger" (click)="logout()"></button>
+            </ng-template>
+        </p-menubar>
+    </div>
+  </header>
+
+
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto p-4">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-4">
+    <div class="container mx-auto text-center">
+      <p>© 2025 VelocityAutomotive - Sistema de Gestión para Concesionarios</p>
+    </div>
+  </footer>
+</div>

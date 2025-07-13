@@ -1,0 +1,209 @@
+<div class="card">
+  <p-toast></p-toast>
+  <p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+  <div class="card">
+    <h2 class="text-2xl font-bold mb-4">Registro de Ventas</h2>
+    <p class="mb-4">Complete el formulario para registrar una nueva venta.</p>
+
+    <p-steps [model]="steps" [activeIndex]="activeIndex" [readonly]="false"></p-steps>
+    
+    <div class="mt-6">
+      <!-- Step 1: Customer Selection -->
+      <div *ngIf="activeIndex === 0">
+        <p-card header="Selección de Cliente" styleClass="mb-4">
+          <div class="mb-4">
+            <p>Seleccione un cliente de la lista o agregue uno nuevo.</p>
+          </div>
+          
+          <div class="grid">
+            <div *ngFor="let customer of customers" class="col-12 md:col-6 lg:col-4 mb-3">
+              <div 
+                class="p-3 border-1 border-round cursor-pointer transition-colors transition-duration-150"
+                [ngClass]="{'border-primary bg-primary-50': selectedCustomer?.id === customer.id, 'border-gray-300 hover:bg-gray-50': selectedCustomer?.id !== customer.id}"
+                (click)="selectCustomer(customer)"
+              >
+                <div class="font-bold mb-2">{{customer.name}}</div>
+                <div class="text-sm text-gray-600">
+                  <div><i class="pi pi-envelope mr-2"></i>{{customer.email}}</div>
+                  <div><i class="pi pi-phone mr-2"></i>{{customer.phone}}</div>
+                  <div><i class="pi pi-map-marker mr-2"></i>{{customer.address}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-content-end mt-4">
+            <button pButton pRipple label="Siguiente" icon="pi pi-arrow-right" iconPos="right" [disabled]="!selectedCustomer" (click)="nextStep()"></button>
+          </div>
+        </p-card>
+      </div>
+      
+      <!-- Step 2: Product Selection -->
+      <div *ngIf="activeIndex === 1">
+        <p-card header="Selección de Productos" styleClass="mb-4">
+          <div class="mb-4">
+            <p>Seleccione un vehículo y/o repuestos para la venta.</p>
+          </div>
+          
+          <h3 class="text-xl font-bold mb-3">Vehículos</h3>
+          <div class="grid">
+            <div *ngFor="let vehicle of vehicles" class="col-12 md:col-6 lg:col-4 mb-3">
+              <div 
+                class="p-3 border-1 border-round cursor-pointer transition-colors transition-duration-150"
+                [ngClass]="{'border-primary bg-primary-50': selectedVehicle?.id === vehicle.id, 'border-gray-300 hover:bg-gray-50': selectedVehicle?.id !== vehicle.id}"
+                (click)="selectVehicle(vehicle)"
+              >
+                <div class="font-bold mb-2">{{vehicle.brand}} {{vehicle.model}}</div>
+                <div class="text-sm text-gray-600">
+                  <div>Año: {{vehicle.year}}</div>
+                  <div>VIN: {{vehicle.vin}}</div>
+                  <div class="font-bold text-lg mt-2">{{vehicle.price | currency:'USD'}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <p-divider></p-divider>
+          
+          <h3 class="text-xl font-bold mb-3">Repuestos</h3>
+          <div class="grid">
+            <div *ngFor="let part of parts" class="col-12 md:col-6 lg:col-4 mb-3">
+              <div 
+                class="p-3 border-1 border-round cursor-pointer transition-colors transition-duration-150"
+                [ngClass]="{'border-primary bg-primary-50': isPartSelected(part), 'border-gray-300 hover:bg-gray-50': !isPartSelected(part)}"
+                (click)="togglePartSelection(part)"
+              >
+                <div class="font-bold mb-2">{{part.name}}</div>
+                <div class="text-sm text-gray-600">
+                  <div class="font-bold">{{part.price | currency:'USD'}}</div>
+                  <div *ngIf="isPartSelected(part)" class="mt-2">
+                    <label for="quantity-{{part.id}}">Cantidad:</label>
+                    <p-inputNumber 
+                      [id]="'quantity-' + part.id" 
+                      [min]="1" 
+                      [showButtons]="true" 
+                      [inputStyleClass]="'w-full'" 
+                      [ngModel]="getPartQuantity(part)"
+                      (ngModelChange)="updatePartQuantity(part, $event)"
+                      (click)="$event.stopPropagation()"
+                    ></p-inputNumber>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-content-between mt-4">
+            <button pButton pRipple label="Anterior" icon="pi pi-arrow-left" class="p-button-secondary" (click)="prevStep()"></button>
+            <button pButton pRipple label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (click)="nextStep()"></button>
+          </div>
+        </p-card>
+      </div>
+      
+      <!-- Step 3: Payment Information -->
+      <div *ngIf="activeIndex === 2">
+        <p-card header="Información de Pago" styleClass="mb-4">
+          <div class="mb-4">
+            <p>Complete la información de pago para finalizar la venta.</p>
+          </div>
+          
+          <div class="field mb-4">
+            <label for="paymentMethod" class="block font-bold mb-2">Método de Pago</label>
+            <p-dropdown 
+              id="paymentMethod" 
+              [options]="paymentMethods" 
+              [(ngModel)]="sale.paymentMethod" 
+              placeholder="Seleccione un método de pago" 
+              [style]="{'width':'100%'}"
+              optionLabel="label" 
+              optionValue="value"
+            ></p-dropdown>
+          </div>
+          
+          <div class="field mb-4">
+            <label for="notes" class="block font-bold mb-2">Notas</label>
+            <textarea 
+              id="notes" 
+              pInputTextarea 
+              [(ngModel)]="sale.notes" 
+              rows="3" 
+              class="w-full"
+              placeholder="Agregue notas adicionales sobre la venta"
+            ></textarea>
+          </div>
+          
+          <div class="flex justify-content-between mt-4">
+            <button pButton pRipple label="Anterior" icon="pi pi-arrow-left" class="p-button-secondary" (click)="prevStep()"></button>
+            <button pButton pRipple label="Siguiente" icon="pi pi-arrow-right" iconPos="right" [disabled]="!sale.paymentMethod" (click)="nextStep()"></button>
+          </div>
+        </p-card>
+      </div>
+      
+      <!-- Step 4: Confirmation -->
+      <div *ngIf="activeIndex === 3">
+        <p-card header="Confirmación de Venta" styleClass="mb-4">
+          <div class="mb-4">
+            <p>Revise los detalles de la venta antes de confirmar.</p>
+          </div>
+          
+          <div class="grid">
+            <div class="col-12 md:col-6">
+              <h3 class="text-xl font-bold mb-3">Información del Cliente</h3>
+              <div class="mb-3">
+                <div class="font-bold">{{selectedCustomer?.name}}</div>
+                <div>{{selectedCustomer?.email}}</div>
+                <div>{{selectedCustomer?.phone}}</div>
+                <div>{{selectedCustomer?.address}}</div>
+              </div>
+              
+              <h3 class="text-xl font-bold mb-3">Método de Pago</h3>
+              <div class="mb-3">
+                <div>{{getPaymentMethodLabel(sale.paymentMethod)}}</div>
+              </div>
+              
+              <div *ngIf="sale.notes">
+                <h3 class="text-xl font-bold mb-3">Notas</h3>
+                <div class="mb-3">
+                  <div>{{sale.notes}}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-12 md:col-6">
+              <h3 class="text-xl font-bold mb-3">Productos</h3>
+              
+              <div *ngIf="selectedVehicle" class="mb-3">
+                <div class="font-bold">Vehículo:</div>
+                <div>{{selectedVehicle!.brand}} {{selectedVehicle!.model}} ({{selectedVehicle!.year}})</div>
+                <div>VIN: {{selectedVehicle!.vin}}</div>
+                <div class="font-bold">{{selectedVehicle!.price | currency:'USD'}}</div>
+              </div>
+              
+              <div *ngIf="selectedParts.length > 0">
+                <div class="font-bold">Repuestos:</div>
+                <ul class="list-none p-0 m-0">
+                  <li *ngFor="let part of selectedParts" class="mb-2">
+                    <div>{{part.name}} x {{part.quantity}}</div>
+                    <div>{{part.price * part.quantity | currency:'USD'}}</div>
+                  </li>
+                </ul>
+              </div>
+              
+              <p-divider></p-divider>
+              
+              <div class="text-right">
+                <div class="text-xl font-bold">Total: {{sale.total | currency:'USD'}}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-content-between mt-4">
+            <button pButton pRipple label="Anterior" icon="pi pi-arrow-left" class="p-button-secondary" (click)="prevStep()"></button>
+            <button pButton pRipple label="Confirmar Venta" icon="pi pi-check" class="p-button-success" (click)="confirmSale()"></button>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </div>
+</div>

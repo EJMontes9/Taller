@@ -1,0 +1,227 @@
+<div class="card">
+  <p-toast></p-toast>
+
+  <div class="card">
+    <h2 class="text-2xl font-bold mb-4">Historial de Servicios</h2>
+    <p class="mb-4">Consulte el historial de servicios realizados a los vehículos de los clientes.</p>
+
+    <div class="mb-4 p-3 bg-gray-100 rounded-md">
+      <h3 class="text-lg font-bold mb-2">Filtros</h3>
+      <div class="grid">
+        <div class="col-12 md:col-4">
+          <div class="flex flex-column">
+            <label class="mb-1 font-medium">Vehículo</label>
+            <div class="flex gap-2">
+              <p-dropdown 
+                [options]="vehicles" 
+                [(ngModel)]="selectedVehicle" 
+                optionLabel="brand" 
+                placeholder="Seleccione un vehículo"
+                [showClear]="true"
+                [style]="{'width':'100%'}"
+              >
+                <ng-template pTemplate="selectedItem">
+                  <div *ngIf="selectedVehicle">
+                    {{getVehicleInfo(selectedVehicle!)}}
+                  </div>
+                </ng-template>
+                <ng-template let-vehicle pTemplate="item">
+                  <div>{{getVehicleInfo(vehicle)}}</div>
+                </ng-template>
+              </p-dropdown>
+              <button pButton pRipple icon="pi pi-filter" class="p-button-primary" (click)="filterByVehicle()"></button>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 md:col-6">
+          <div class="flex flex-column">
+            <label class="mb-1 font-medium">Rango de Fechas</label>
+            <div class="flex gap-2">
+              <p-calendar [(ngModel)]="dateRange.start" placeholder="Fecha Inicio" [showIcon]="true" dateFormat="dd/mm/yy"></p-calendar>
+              <p-calendar [(ngModel)]="dateRange.end" placeholder="Fecha Fin" [showIcon]="true" dateFormat="dd/mm/yy"></p-calendar>
+              <button pButton pRipple icon="pi pi-filter" class="p-button-primary" (click)="filterByDateRange()"></button>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 md:col-2 flex align-items-end">
+          <button pButton pRipple label="Limpiar Filtros" icon="pi pi-times" class="p-button-secondary" (click)="clearFilters()"></button>
+        </div>
+      </div>
+    </div>
+
+    <p-table 
+      #dt 
+      [value]="serviceRecords" 
+      [rows]="10" 
+      [paginator]="true" 
+      [globalFilterFields]="['vehicle.brand','vehicle.model','customer.name','serviceType','description']"
+      [tableStyle]="{'min-width': '75rem'}"
+      [rowHover]="true"
+      dataKey="id"
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+      [showCurrentPageReport]="true"
+      [sortField]="'date'"
+      [sortOrder]="-1"
+    >
+      <ng-template pTemplate="caption">
+        <div class="flex justify-between items-center">
+          <h5 class="m-0">Registros de Servicio</h5>
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" placeholder="Buscar..." (input)="onFilterInput($event, dt)" />
+          </span>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="date">Fecha <p-sortIcon field="date"></p-sortIcon></th>
+          <th>Vehículo</th>
+          <th>Cliente</th>
+          <th pSortableColumn="serviceType">Tipo de Servicio <p-sortIcon field="serviceType"></p-sortIcon></th>
+          <th>Descripción</th>
+          <th>Técnico</th>
+          <th pSortableColumn="status">Estado <p-sortIcon field="status"></p-sortIcon></th>
+          <th pSortableColumn="cost">Costo <p-sortIcon field="cost"></p-sortIcon></th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-record>
+        <tr>
+          <td>{{formatDate(record.date)}}</td>
+          <td>{{getVehicleInfo(record.vehicle)}}</td>
+          <td>{{record.customer.name}}</td>
+          <td>{{getServiceTypeLabel(record.serviceType)}}</td>
+          <td>{{record.description}}</td>
+          <td>{{record.technician}}</td>
+          <td>
+            <p-tag [value]="getStatusLabel(record.status)" [severity]="getStatusSeverity(record.status)"></p-tag>
+          </td>
+          <td>{{record.cost | currency:'USD'}}</td>
+          <td>
+            <button pButton pRipple icon="pi pi-eye" class="p-button-rounded p-button-info" (click)="viewDetails(record)" pTooltip="Ver detalles"></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="text-center p-4">No se encontraron registros de servicio.</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="summary">
+        <div class="flex justify-between items-center">
+          En total hay {{serviceRecords ? serviceRecords.length : 0 }} registros de servicio.
+        </div>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-dialog [(visible)]="detailsDialog" [style]="{width: '700px'}" header="Detalles del Servicio" [modal]="true" styleClass="p-fluid">
+    <ng-template pTemplate="content" *ngIf="selectedRecord">
+      <div class="grid">
+        <div class="col-12 md:col-6">
+          <p-card styleClass="h-full">
+            <ng-template pTemplate="header">
+              <div class="bg-primary-50 p-3">
+                <h3 class="text-xl font-bold text-primary">Información General</h3>
+              </div>
+            </ng-template>
+            <div class="p-field mb-3">
+              <label class="font-bold">Fecha:</label>
+              <div>{{formatDate(selectedRecord!.date)}}</div>
+            </div>
+            <div class="p-field mb-3">
+              <label class="font-bold">Vehículo:</label>
+              <div>{{getVehicleInfo(selectedRecord!.vehicle)}}</div>
+            </div>
+            <div class="p-field mb-3">
+              <label class="font-bold">Cliente:</label>
+              <div>{{selectedRecord!.customer.name}}</div>
+            </div>
+            <div class="p-field mb-3">
+              <label class="font-bold">Tipo de Servicio:</label>
+              <div>{{getServiceTypeLabel(selectedRecord!.serviceType)}}</div>
+            </div>
+            <div class="p-field mb-3">
+              <label class="font-bold">Descripción:</label>
+              <div>{{selectedRecord!.description}}</div>
+            </div>
+            <div class="p-field mb-3">
+              <label class="font-bold">Técnico:</label>
+              <div>{{selectedRecord!.technician}}</div>
+            </div>
+            <div class="p-field mb-3">
+              <label class="font-bold">Estado:</label>
+              <div>
+                <p-tag [value]="getStatusLabel(selectedRecord!.status)" [severity]="getStatusSeverity(selectedRecord!.status)"></p-tag>
+              </div>
+            </div>
+            <div class="p-field mb-3" *ngIf="selectedRecord.mileage">
+              <label class="font-bold">Kilometraje:</label>
+              <div>{{selectedRecord!.mileage}} km</div>
+            </div>
+            <div class="p-field mb-3" *ngIf="selectedRecord.notes">
+              <label class="font-bold">Notas:</label>
+              <div>{{selectedRecord!.notes}}</div>
+            </div>
+          </p-card>
+        </div>
+
+        <div class="col-12 md:col-6">
+          <p-card styleClass="h-full">
+            <ng-template pTemplate="header">
+              <div class="bg-primary-50 p-3">
+                <h3 class="text-xl font-bold text-primary">Detalles de Costos</h3>
+              </div>
+            </ng-template>
+
+            <div *ngIf="selectedRecord.parts && selectedRecord.parts.length > 0">
+              <h4 class="text-lg font-bold mb-2">Repuestos</h4>
+              <p-table [value]="selectedRecord!.parts || []" [tableStyle]="{'min-width': '100%'}">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th>Descripción</th>
+                    <th style="width: 20%">Cantidad</th>
+                    <th style="width: 25%">Precio Unit.</th>
+                    <th style="width: 25%">Total</th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-part>
+                  <tr>
+                    <td>{{part.name}}</td>
+                    <td>{{part.quantity}}</td>
+                    <td>{{part.unitPrice | currency:'USD'}}</td>
+                    <td>{{part.quantity * part.unitPrice | currency:'USD'}}</td>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="footer">
+                  <tr>
+                    <td colspan="3" class="text-right font-bold">Subtotal Repuestos:</td>
+                    <td class="font-bold">{{calculateTotalParts(selectedRecord!.parts || []) | currency:'USD'}}</td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </div>
+
+            <div *ngIf="selectedRecord.laborHours" class="mt-4">
+              <h4 class="text-lg font-bold mb-2">Mano de Obra</h4>
+              <div class="grid">
+                <div class="col-8">Horas de trabajo ({{selectedRecord!.laborHours}} hrs &#64; $45.00/hr)</div>
+                <div class="col-4 text-right">{{calculateLaborCost(selectedRecord!.laborHours) | currency:'USD'}}</div>
+              </div>
+            </div>
+
+            <p-divider></p-divider>
+
+            <div class="grid">
+              <div class="col-8 text-xl font-bold">Total</div>
+              <div class="col-4 text-right text-xl font-bold">{{selectedRecord!.cost | currency:'USD'}}</div>
+            </div>
+          </p-card>
+        </div>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+      <button pButton pRipple label="Cerrar" icon="pi pi-times" class="p-button-text" (click)="hideDialog()"></button>
+    </ng-template>
+  </p-dialog>
+</div>

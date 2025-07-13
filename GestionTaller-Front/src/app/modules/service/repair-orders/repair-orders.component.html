@@ -1,0 +1,485 @@
+<div class="card">
+  <p-toast></p-toast>
+  <p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+  <div class="card">
+    <h2 class="text-2xl font-bold mb-4">Gestión de Órdenes de Reparación</h2>
+    <p class="mb-4">Administre las órdenes de reparación y mantenimiento de vehículos.</p>
+
+    <!-- Filtros -->
+    <div class="flex flex-wrap gap-3 mb-4">
+      <div class="flex align-items-center">
+        <span class="mr-2">Fecha:</span>
+        <p-calendar [(ngModel)]="dateFilter" [showIcon]="true" dateFormat="dd/mm/yy" placeholder="Seleccione fecha"></p-calendar>
+      </div>
+      <div class="flex align-items-center">
+        <span class="mr-2">Estado:</span>
+        <p-dropdown [options]="statuses" [(ngModel)]="statusFilter" optionLabel="label" optionValue="value" placeholder="Todos los estados"></p-dropdown>
+      </div>
+      <div class="flex align-items-center">
+        <button pButton pRipple label="Filtrar" icon="pi pi-filter" class="p-button-outlined mr-2" (click)="filterByStatus()"></button>
+        <button pButton pRipple label="Limpiar" icon="pi pi-times" class="p-button-outlined p-button-danger" (click)="clearFilters()"></button>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="flex justify-between items-center mb-4">
+      <button pButton pRipple label="Nueva Orden" icon="pi pi-plus" class="p-button-success" (click)="openNew()"></button>
+      <button pButton pRipple label="Eliminar Seleccionados" icon="pi pi-trash" class="p-button-danger" (click)="deleteSelectedRepairOrders()" [disabled]="!selectedRepairOrders || !selectedRepairOrders.length"></button>
+    </div>
+
+    <!-- Tabla de órdenes de reparación -->
+    <p-table 
+      #dt 
+      [value]="repairOrders" 
+      [rows]="10" 
+      [paginator]="true" 
+      [globalFilterFields]="['orderNumber','customer.name','vehicle.brand','vehicle.model','status','technician']"
+      [tableStyle]="{'min-width': '75rem'}"
+      [(selection)]="selectedRepairOrders"
+      [rowHover]="true"
+      dataKey="id"
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} órdenes"
+      [showCurrentPageReport]="true"
+    >
+      <ng-template pTemplate="caption">
+        <div class="flex justify-between items-center">
+          <h5 class="m-0">Órdenes de Reparación</h5>
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" placeholder="Buscar..." (input)="onFilterInput($event, dt)" />
+          </span>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 3rem">
+            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+          </th>
+          <th pSortableColumn="orderNumber">Nº Orden <p-sortIcon field="orderNumber"></p-sortIcon></th>
+          <th pSortableColumn="customer.name">Cliente <p-sortIcon field="customer.name"></p-sortIcon></th>
+          <th pSortableColumn="vehicle.brand">Vehículo <p-sortIcon field="vehicle.brand"></p-sortIcon></th>
+          <th pSortableColumn="dateCreated">Fecha Creación <p-sortIcon field="dateCreated"></p-sortIcon></th>
+          <th pSortableColumn="estimatedCompletionDate">Fecha Est. Finalización <p-sortIcon field="estimatedCompletionDate"></p-sortIcon></th>
+          <th pSortableColumn="status">Estado <p-sortIcon field="status"></p-sortIcon></th>
+          <th pSortableColumn="technician">Técnico <p-sortIcon field="technician"></p-sortIcon></th>
+          <th pSortableColumn="totalCost">Costo Total <p-sortIcon field="totalCost"></p-sortIcon></th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-repairOrder>
+        <tr>
+          <td>
+            <p-tableCheckbox [value]="repairOrder"></p-tableCheckbox>
+          </td>
+          <td>{{repairOrder.orderNumber}}</td>
+          <td>{{repairOrder.customer.name}}</td>
+          <td>{{getVehicleInfo(repairOrder.vehicle)}}</td>
+          <td>{{formatDate(repairOrder.dateCreated)}}</td>
+          <td>{{formatDate(repairOrder.estimatedCompletionDate)}}</td>
+          <td>
+            <p-tag [value]="getStatusLabel(repairOrder.status)" [severity]="getStatusSeverity(repairOrder.status)"></p-tag>
+          </td>
+          <td>{{repairOrder.technician}}</td>
+          <td>{{repairOrder.totalCost | currency:'USD'}}</td>
+          <td>
+            <div class="flex">
+              <button pButton pRipple icon="pi pi-eye" class="p-button-rounded p-button-info mr-2" (click)="viewDetails(repairOrder)" pTooltip="Ver detalles"></button>
+              <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" (click)="editRepairOrder(repairOrder)" pTooltip="Editar"></button>
+              <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-danger" (click)="deleteRepairOrder(repairOrder)" pTooltip="Eliminar"></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="summary">
+        <div class="flex justify-between items-center">
+          En total hay {{repairOrders ? repairOrders.length : 0 }} órdenes de reparación.
+        </div>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Diálogo de creación/edición de orden de reparación -->
+  <p-dialog [(visible)]="repairOrderDialog" [style]="{width: '80%', maxWidth: '900px'}" [header]="repairOrder.id ? 'Editar Orden de Reparación' : 'Nueva Orden de Reparación'" [modal]="true" styleClass="p-fluid" [draggable]="false" [resizable]="false">
+    <p-steps [model]="steps" [(activeIndex)]="activeIndex" [readonly]="false"></p-steps>
+
+    <div class="mt-4">
+      <!-- Paso 1: Información General -->
+      <div *ngIf="activeIndex === 0">
+        <div class="grid">
+          <div class="col-12 md:col-6">
+            <div class="field">
+              <label for="customer">Cliente</label>
+              <p-dropdown [options]="customers" [(ngModel)]="repairOrder.customer" optionLabel="name" placeholder="Seleccione un cliente" [showClear]="true" [filter]="true" filterBy="name" [required]="true" [ngClass]="{'ng-invalid ng-dirty': submitted && !repairOrder.customer}"></p-dropdown>
+              <small class="p-error" *ngIf="submitted && !repairOrder.customer">El cliente es requerido.</small>
+            </div>
+          </div>
+          <div class="col-12 md:col-6">
+            <div class="field">
+              <label for="vehicle">Vehículo</label>
+              <p-dropdown [options]="vehicles" [(ngModel)]="repairOrder.vehicle" optionLabel="brand" placeholder="Seleccione un vehículo" [showClear]="true" [filter]="true" filterBy="brand,model" [required]="true" [ngClass]="{'ng-invalid ng-dirty': submitted && !repairOrder.vehicle}">
+                <ng-template pTemplate="selectedItem">
+                  <div *ngIf="repairOrder.vehicle">
+                    {{getVehicleInfo(repairOrder.vehicle)}}
+                  </div>
+                </ng-template>
+                <ng-template let-vehicle pTemplate="item">
+                  {{getVehicleInfo(vehicle)}}
+                </ng-template>
+              </p-dropdown>
+              <small class="p-error" *ngIf="submitted && !repairOrder.vehicle">El vehículo es requerido.</small>
+            </div>
+          </div>
+          <div class="col-12 md:col-6">
+            <div class="field">
+              <label for="mileage">Kilometraje</label>
+              <p-inputNumber id="mileage" [(ngModel)]="repairOrder.mileage" [showButtons]="false" [min]="0" placeholder="Ingrese el kilometraje"></p-inputNumber>
+            </div>
+          </div>
+          <div class="col-12 md:col-6">
+            <div class="field">
+              <label for="technician">Técnico Asignado</label>
+              <p-dropdown [options]="technicians" [(ngModel)]="repairOrder.technician" optionLabel="label" optionValue="value" placeholder="Seleccione un técnico" [required]="true" [ngClass]="{'ng-invalid ng-dirty': submitted && !repairOrder.technician}"></p-dropdown>
+              <small class="p-error" *ngIf="submitted && !repairOrder.technician">El técnico es requerido.</small>
+            </div>
+          </div>
+          <div class="col-12 md:col-6">
+            <div class="field">
+              <label for="status">Estado</label>
+              <p-dropdown [options]="statuses" [(ngModel)]="repairOrder.status" optionLabel="label" optionValue="value" placeholder="Seleccione un estado"></p-dropdown>
+            </div>
+          </div>
+          <div class="col-12 md:col-6">
+            <div class="field">
+              <label for="estimatedCompletionDate">Fecha Estimada de Finalización</label>
+              <p-calendar [(ngModel)]="repairOrder.estimatedCompletionDate" [showIcon]="true" dateFormat="dd/mm/yy" [minDate]="repairOrder.dateCreated"></p-calendar>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="field">
+              <label for="description">Descripción del Servicio</label>
+              <textarea pInputTextarea [(ngModel)]="repairOrder.description" rows="3" [required]="true" [ngClass]="{'ng-invalid ng-dirty': submitted && !repairOrder.description}"></textarea>
+              <small class="p-error" *ngIf="submitted && !repairOrder.description">La descripción es requerida.</small>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="field">
+              <label for="notes">Notas Adicionales</label>
+              <textarea pInputTextarea [(ngModel)]="repairOrder.notes" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 2: Repuestos y Mano de Obra -->
+      <div *ngIf="activeIndex === 1">
+        <p-tabView>
+          <!-- Pestaña de Repuestos -->
+          <p-tabPanel header="Repuestos">
+            <div class="grid mb-3">
+              <div class="col-12 md:col-5">
+                <div class="field">
+                  <label for="part">Repuesto</label>
+                  <p-dropdown [options]="availableParts" [(ngModel)]="selectedPart" optionLabel="name" placeholder="Seleccione un repuesto" [filter]="true" filterBy="name"></p-dropdown>
+                </div>
+              </div>
+              <div class="col-12 md:col-3">
+                <div class="field">
+                  <label for="quantity">Cantidad</label>
+                  <p-inputNumber [(ngModel)]="newPart.quantity" [showButtons]="true" [min]="1" [step]="1"></p-inputNumber>
+                </div>
+              </div>
+              <div class="col-12 md:col-4 flex align-items-end">
+                <button pButton pRipple label="Agregar Repuesto" icon="pi pi-plus" class="p-button-success" (click)="addPart()" [disabled]="!selectedPart"></button>
+              </div>
+            </div>
+
+            <p-table [value]="repairOrder.parts" [tableStyle]="{'min-width': '50rem'}">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Repuesto</th>
+                  <th>Cantidad</th>
+                  <th>Precio Unitario</th>
+                  <th>Subtotal</th>
+                  <th>Aprobado</th>
+                  <th></th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-part>
+                <tr>
+                  <td>{{part.name}}</td>
+                  <td>{{part.quantity}}</td>
+                  <td>{{part.unitPrice | currency:'USD'}}</td>
+                  <td>{{part.quantity * part.unitPrice | currency:'USD'}}</td>
+                  <td>
+                    <p-checkbox [(ngModel)]="part.isApproved" [binary]="true"></p-checkbox>
+                  </td>
+                  <td>
+                    <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm" (click)="removePart(part)"></button>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="footer">
+                <tr>
+                  <td colspan="3" class="text-right font-bold">Total Repuestos:</td>
+                  <td class="font-bold">{{calculatePartsCost() | currency:'USD'}}</td>
+                  <td colspan="2"></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="6" class="text-center">No hay repuestos agregados.</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-tabPanel>
+
+          <!-- Pestaña de Mano de Obra -->
+          <p-tabPanel header="Mano de Obra">
+            <div class="grid mb-3">
+              <div class="col-12 md:col-5">
+                <div class="field">
+                  <label for="laborDescription">Descripción</label>
+                  <input type="text" pInputText [(ngModel)]="newLabor.description" placeholder="Descripción del trabajo">
+                </div>
+              </div>
+              <div class="col-12 md:col-3">
+                <div class="field">
+                  <label for="hours">Horas</label>
+                  <p-inputNumber [(ngModel)]="newLabor.hours" [showButtons]="true" [min]="0.5" [step]="0.5"></p-inputNumber>
+                </div>
+              </div>
+              <div class="col-12 md:col-4 flex align-items-end">
+                <button pButton pRipple label="Agregar Mano de Obra" icon="pi pi-plus" class="p-button-success" (click)="addLabor()" [disabled]="!newLabor.description"></button>
+              </div>
+            </div>
+
+            <p-table [value]="repairOrder.labor" [tableStyle]="{'min-width': '50rem'}">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Descripción</th>
+                  <th>Horas</th>
+                  <th>Tarifa por Hora</th>
+                  <th>Subtotal</th>
+                  <th>Aprobado</th>
+                  <th></th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-labor>
+                <tr>
+                  <td>{{labor.description}}</td>
+                  <td>{{labor.hours}}</td>
+                  <td>{{labor.hourlyRate | currency:'USD'}}</td>
+                  <td>{{labor.hours * labor.hourlyRate | currency:'USD'}}</td>
+                  <td>
+                    <p-checkbox [(ngModel)]="labor.isApproved" [binary]="true"></p-checkbox>
+                  </td>
+                  <td>
+                    <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm" (click)="removeLabor(labor)"></button>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="footer">
+                <tr>
+                  <td colspan="3" class="text-right font-bold">Total Mano de Obra:</td>
+                  <td class="font-bold">{{calculateLaborCost() | currency:'USD'}}</td>
+                  <td colspan="2"></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="6" class="text-center">No hay mano de obra agregada.</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-tabPanel>
+        </p-tabView>
+
+        <div class="mt-3 p-3 bg-gray-100 rounded-lg">
+          <div class="flex justify-between items-center">
+            <span class="text-lg font-bold">Costo Total:</span>
+            <span class="text-xl font-bold">{{repairOrder.totalCost | currency:'USD'}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 3: Aprobación y Finalización -->
+      <div *ngIf="activeIndex === 2">
+        <div class="grid">
+          <div class="col-12">
+            <p-card header="Resumen de la Orden">
+              <div class="grid">
+                <div class="col-12 md:col-6">
+                  <p><strong>Cliente:</strong> {{repairOrder.customer?.name}}</p>
+                  <p><strong>Vehículo:</strong> {{repairOrder.vehicle ? getVehicleInfo(repairOrder.vehicle) : ''}}</p>
+                  <p><strong>Kilometraje:</strong> {{repairOrder.mileage}}</p>
+                  <p><strong>Técnico:</strong> {{repairOrder.technician}}</p>
+                </div>
+                <div class="col-12 md:col-6">
+                  <p><strong>Fecha de Creación:</strong> {{formatDate(repairOrder.dateCreated)}}</p>
+                  <p><strong>Fecha Est. Finalización:</strong> {{formatDate(repairOrder.estimatedCompletionDate)}}</p>
+                  <p><strong>Estado:</strong> {{getStatusLabel(repairOrder.status)}}</p>
+                  <p><strong>Costo Total:</strong> {{repairOrder.totalCost | currency:'USD'}}</p>
+                </div>
+                <div class="col-12">
+                  <p><strong>Descripción:</strong> {{repairOrder.description}}</p>
+                  <p *ngIf="repairOrder.notes"><strong>Notas:</strong> {{repairOrder.notes}}</p>
+                </div>
+              </div>
+            </p-card>
+          </div>
+
+          <div class="col-12 mt-3">
+            <div class="field-checkbox">
+              <p-checkbox [(ngModel)]="repairOrder.customerApproval" [binary]="true" inputId="customerApproval"></p-checkbox>
+              <label for="customerApproval">Aprobación del Cliente</label>
+            </div>
+          </div>
+
+          <div class="col-12 mt-3 flex flex-wrap gap-2">
+            <button pButton pRipple label="Aprobar Todos los Ítems" icon="pi pi-check" class="p-button-success" (click)="approveAll()"></button>
+            <button pButton pRipple label="Marcar como Completado" icon="pi pi-check-circle" class="p-button-info" (click)="completeOrder()" [disabled]="repairOrder.status === 'completado' || repairOrder.status === 'entregado'"></button>
+            <button pButton pRipple label="Marcar como Entregado" icon="pi pi-send" class="p-button-warning" (click)="deliverOrder()" [disabled]="repairOrder.status !== 'completado'"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button pButton pRipple label="Cancelar" icon="pi pi-times" class="p-button-text" (click)="hideDialog()"></button>
+      <button pButton pRipple label="Anterior" icon="pi pi-angle-left" class="p-button-text" (click)="prevStep()" *ngIf="activeIndex > 0"></button>
+      <button pButton pRipple label="Siguiente" icon="pi pi-angle-right" iconPos="right" class="p-button-text" (click)="nextStep()" *ngIf="activeIndex < steps.length - 1"></button>
+      <button pButton pRipple label="Guardar" icon="pi pi-check" class="p-button-text" (click)="saveRepairOrder()" *ngIf="activeIndex === steps.length - 1"></button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Diálogo de detalles de orden de reparación -->
+  <p-dialog [(visible)]="detailsDialog" [style]="{width: '80%', maxWidth: '900px'}" header="Detalles de la Orden de Reparación" [modal]="true" styleClass="p-fluid" [draggable]="false" [resizable]="false">
+    <div class="grid">
+      <div class="col-12">
+        <p-card>
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-xl font-bold">Orden #{{repairOrder.orderNumber}}</h3>
+            <p-tag [value]="getStatusLabel(repairOrder.status)" [severity]="getStatusSeverity(repairOrder.status)"></p-tag>
+          </div>
+
+          <div class="grid">
+            <div class="col-12 md:col-6">
+              <p><strong>Cliente:</strong> {{repairOrder.customer?.name}}</p>
+              <p><strong>Email:</strong> {{repairOrder.customer?.email}}</p>
+              <p><strong>Teléfono:</strong> {{repairOrder.customer?.phone}}</p>
+              <p><strong>Vehículo:</strong> {{repairOrder.vehicle ? getVehicleInfo(repairOrder.vehicle) : ''}}</p>
+              <p><strong>VIN:</strong> {{repairOrder.vehicle?.vin}}</p>
+              <p><strong>Kilometraje:</strong> {{repairOrder.mileage}}</p>
+            </div>
+            <div class="col-12 md:col-6">
+              <p><strong>Fecha de Creación:</strong> {{formatDate(repairOrder.dateCreated)}}</p>
+              <p><strong>Fecha Est. Finalización:</strong> {{formatDate(repairOrder.estimatedCompletionDate)}}</p>
+              <p *ngIf="repairOrder.dateCompleted"><strong>Fecha de Finalización:</strong> {{formatDate(repairOrder.dateCompleted)}}</p>
+              <p><strong>Técnico:</strong> {{repairOrder.technician}}</p>
+              <p><strong>Aprobación del Cliente:</strong> {{repairOrder.customerApproval ? 'Sí' : 'No'}}</p>
+            </div>
+            <div class="col-12">
+              <p><strong>Descripción:</strong> {{repairOrder.description}}</p>
+              <p *ngIf="repairOrder.notes"><strong>Notas:</strong> {{repairOrder.notes}}</p>
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="col-12 mt-3">
+        <p-tabView>
+          <!-- Pestaña de Repuestos -->
+          <p-tabPanel header="Repuestos">
+            <p-table [value]="repairOrder.parts" [tableStyle]="{'min-width': '50rem'}">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Repuesto</th>
+                  <th>Cantidad</th>
+                  <th>Precio Unitario</th>
+                  <th>Subtotal</th>
+                  <th>Aprobado</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-part>
+                <tr>
+                  <td>{{part.name}}</td>
+                  <td>{{part.quantity}}</td>
+                  <td>{{part.unitPrice | currency:'USD'}}</td>
+                  <td>{{part.quantity * part.unitPrice | currency:'USD'}}</td>
+                  <td>
+                    <i class="pi" [ngClass]="{'pi-check-circle text-green-500': part.isApproved, 'pi-times-circle text-red-500': !part.isApproved}"></i>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="footer">
+                <tr>
+                  <td colspan="3" class="text-right font-bold">Total Repuestos:</td>
+                  <td class="font-bold">{{calculatePartsCost() | currency:'USD'}}</td>
+                  <td></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="5" class="text-center">No hay repuestos agregados.</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-tabPanel>
+
+          <!-- Pestaña de Mano de Obra -->
+          <p-tabPanel header="Mano de Obra">
+            <p-table [value]="repairOrder.labor" [tableStyle]="{'min-width': '50rem'}">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Descripción</th>
+                  <th>Horas</th>
+                  <th>Tarifa por Hora</th>
+                  <th>Subtotal</th>
+                  <th>Aprobado</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-labor>
+                <tr>
+                  <td>{{labor.description}}</td>
+                  <td>{{labor.hours}}</td>
+                  <td>{{labor.hourlyRate | currency:'USD'}}</td>
+                  <td>{{labor.hours * labor.hourlyRate | currency:'USD'}}</td>
+                  <td>
+                    <i class="pi" [ngClass]="{'pi-check-circle text-green-500': labor.isApproved, 'pi-times-circle text-red-500': !labor.isApproved}"></i>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="footer">
+                <tr>
+                  <td colspan="3" class="text-right font-bold">Total Mano de Obra:</td>
+                  <td class="font-bold">{{calculateLaborCost() | currency:'USD'}}</td>
+                  <td></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="5" class="text-center">No hay mano de obra agregada.</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-tabPanel>
+        </p-tabView>
+      </div>
+
+      <div class="col-12 mt-3">
+        <div class="p-3 bg-gray-100 rounded-lg">
+          <div class="flex justify-between items-center">
+            <span class="text-lg font-bold">Costo Total:</span>
+            <span class="text-xl font-bold">{{repairOrder.totalCost | currency:'USD'}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button pButton pRipple label="Cerrar" icon="pi pi-times" class="p-button-text" (click)="hideDialog()"></button>
+      <button pButton pRipple label="Editar" icon="pi pi-pencil" class="p-button-text" (click)="editRepairOrder(repairOrder); detailsDialog = false;"></button>
+    </ng-template>
+  </p-dialog>
+</div>

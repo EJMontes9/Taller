@@ -1,0 +1,156 @@
+<div class="card">
+  <h2 class="text-2xl font-bold mb-4">Dashboard de Informes</h2>
+  <p class="mb-4">Visualice métricas clave y genere informes para su concesionario.</p>
+
+  <!-- Filtros -->
+  <div class="flex justify-between items-center mb-4 p-3 bg-gray-50 rounded-lg">
+    <div class="flex items-center">
+      <span class="mr-2 font-medium">Rango de tiempo:</span>
+      <p-dropdown [options]="timeRanges" [(ngModel)]="selectedTimeRange" optionLabel="label" optionValue="value" (onChange)="onTimeRangeChange()"></p-dropdown>
+    </div>
+    <div>
+      <button pButton pRipple label="Exportar PDF" icon="pi pi-file-pdf" class="p-button-outlined mr-2" (click)="exportReport('pdf')"></button>
+      <button pButton pRipple label="Exportar Excel" icon="pi pi-file-excel" class="p-button-outlined p-button-success" (click)="exportReport('excel')"></button>
+    </div>
+  </div>
+
+  <!-- Gráficos principales -->
+  <div class="grid grid-cols-6 gap-4">
+    <!-- Gráfico de ventas -->
+    <div class="col-span-3 mb-4">
+      <p-card header="Rendimiento de Ventas">
+        <p-chart type="line" [data]="salesData" [options]="salesOptions" height="300px"></p-chart>
+      </p-card>
+    </div>
+
+    <!-- Gráfico de inventario -->
+    <div class="col-span-3 mb-4">
+      <p-card header="Estado del Inventario">
+        <p-chart type="pie" [data]="inventoryData" [options]="inventoryOptions" height="300px"></p-chart>
+      </p-card>
+    </div>
+
+    <!-- Gráfico de servicios -->
+    <div class="col-span-3 mb-4">
+      <p-card header="Rendimiento del Departamento de Servicio">
+        <p-chart type="bar" [data]="serviceData" [options]="serviceOptions" height="300px"></p-chart>
+      </p-card>
+    </div>
+
+    <!-- Gráfico financiero -->
+    <div class="col-span-3 mb-4">
+      <p-card header="Informe Financiero">
+        <p-chart type="bar" [data]="financialData" [options]="financialOptions" height="300px"></p-chart>
+      </p-card>
+    </div>
+  </div>
+
+  <!-- Alertas de inventario -->
+  <div class="grid grid-cols-6 gap-4">
+    <div class="col-span-6 mb-4">
+      <p-card header="Alertas de Inventario Bajo" subheader="Repuestos que necesitan reabastecimiento">
+        <p-table [value]="lowStockItems" [tableStyle]="{'min-width': '100%'}" [paginator]="true" [rows]="5">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Stock Actual</th>
+              <th>Stock Mínimo</th>
+              <th>Proveedor</th>
+              <th>Estado</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-item>
+            <tr>
+              <td>{{item.name}}</td>
+              <td>{{item.category}}</td>
+              <td>{{item.stock}}</td>
+              <td>{{item.minStock}}</td>
+              <td>{{item.supplier}}</td>
+              <td>
+                <p-tag [value]="item.stock <= 0 ? 'Sin Stock' : 'Bajo Stock'" [severity]="getStockSeverity(item)"></p-tag>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  </div>
+
+  <!-- Tablas de datos -->
+  <div class="grid grid-cols-6 gap-4">
+    <!-- Vehículos más vendidos -->
+    <div class="col-span-3 mb-4">
+      <p-card header="Vehículos Más Vendidos" subheader="Top 5 vehículos por ventas">
+        <p-table [value]="topSellingVehicles" [tableStyle]="{'min-width': '100%'}">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Marca</th>
+              <th>Modelo</th>
+              <th>Año</th>
+              <th>Ventas</th>
+              <th>Ingresos</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-vehicle>
+            <tr>
+              <td>{{vehicle.brand}}</td>
+              <td>{{vehicle.model}}</td>
+              <td>{{vehicle.year}}</td>
+              <td>{{vehicle.sales}}</td>
+              <td>{{vehicle.revenue | currency:'USD'}}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+
+    <!-- Repuestos más vendidos -->
+    <div class="col-span-3 mb-4">
+      <p-card header="Repuestos Más Vendidos" subheader="Top 5 repuestos por ventas">
+        <p-table [value]="topSellingParts" [tableStyle]="{'min-width': '100%'}">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Ventas</th>
+              <th>Ingresos</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-part>
+            <tr>
+              <td>{{part.name}}</td>
+              <td>{{part.category}}</td>
+              <td>{{part.sales}}</td>
+              <td>{{part.revenue | currency:'USD'}}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+
+    <!-- Próximos servicios -->
+    <div class="col-span-6 mb-4">
+      <p-card header="Próximos Servicios" subheader="Servicios programados para los próximos días">
+        <p-table [value]="upcomingServices" [tableStyle]="{'min-width': '100%'}" [paginator]="true" [rows]="5">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Cliente</th>
+              <th>Vehículo</th>
+              <th>Servicio</th>
+              <th>Fecha</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-service>
+            <tr>
+              <td>{{service.customer}}</td>
+              <td>{{service.vehicle}}</td>
+              <td>{{service.service}}</td>
+              <td>{{formatDate(service.date)}}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  </div>
+</div>

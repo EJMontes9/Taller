@@ -1,0 +1,195 @@
+<div class="card">
+  <p-toast></p-toast>
+  <p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+  <div class="card">
+    <h2 class="text-2xl font-bold mb-4">Listado de Ventas</h2>
+    <p class="mb-4">Consulte y gestione todas las ventas realizadas en el concesionario.</p>
+
+    <div class="mb-4 p-4 bg-gray-100 rounded-md shadow-sm">
+      <h3 class="text-lg font-bold mb-3">Filtros</h3>
+      <div class="flex flex-wrap gap-4 items-end">
+        <div class="flex-1 min-w-[300px]">
+          <label class="mb-2 font-medium block">Rango de Fechas</label>
+          <div class="flex gap-2 flex-wrap">
+            <p-calendar [(ngModel)]="dateFilters.start" placeholder="Fecha Inicio" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full md:w-auto"></p-calendar>
+            <p-calendar [(ngModel)]="dateFilters.end" placeholder="Fecha Fin" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full md:w-auto"></p-calendar>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button pButton pRipple label="Filtrar" icon="pi pi-filter" class="p-button-primary" (click)="filterByDate()"></button>
+          <button pButton pRipple label="Limpiar" icon="pi pi-times" class="p-button-secondary" (click)="clearDateFilters()"></button>
+        </div>
+      </div>
+    </div>
+
+    <p-table 
+      #dt 
+      [value]="sales" 
+      [rows]="10" 
+      [paginator]="true" 
+      [globalFilterFields]="['customer.name','invoiceNumber','salesperson']"
+      [tableStyle]="{'min-width': '75rem'}"
+      [(selection)]="selectedSales"
+      [rowHover]="true"
+      dataKey="id"
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} ventas"
+      [showCurrentPageReport]="true"
+    >
+      <ng-template pTemplate="caption">
+        <div class="flex justify-between items-center">
+          <h5 class="m-0">Historial de Ventas</h5>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-search"></p-inputicon>
+            <input pInputText type="text" placeholder="Buscar..." (input)="onFilterInput($event, dt)" />
+          </p-iconfield>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 3rem">
+            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+          </th>
+          <th pSortableColumn="date">Fecha <p-sortIcon field="date"></p-sortIcon></th>
+          <th pSortableColumn="invoiceNumber">Factura <p-sortIcon field="invoiceNumber"></p-sortIcon></th>
+          <th pSortableColumn="customer.name">Cliente <p-sortIcon field="customer.name"></p-sortIcon></th>
+          <th>Tipo</th>
+          <th>Descripción</th>
+          <th pSortableColumn="total">Total <p-sortIcon field="total"></p-sortIcon></th>
+          <th pSortableColumn="status">Estado <p-sortIcon field="status"></p-sortIcon></th>
+          <th pSortableColumn="salesperson">Vendedor <p-sortIcon field="salesperson"></p-sortIcon></th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-sale>
+        <tr>
+          <td>
+            <p-tableCheckbox [value]="sale"></p-tableCheckbox>
+          </td>
+          <td>{{formatDate(sale.date)}}</td>
+          <td>{{sale.invoiceNumber}}</td>
+          <td>{{sale.customer?.name || 'N/A'}}</td>
+          <td>{{getSaleType(sale)}}</td>
+          <td>{{getSaleDescription(sale)}}</td>
+          <td>{{sale.total | currency:'USD'}}</td>
+          <td>
+            <p-tag [value]="getStatusLabel(sale.status)" [severity]="getStatusSeverity(sale.status)"></p-tag>
+          </td>
+          <td>{{sale.salesperson}}</td>
+          <td>
+            <div class="flex">
+              <button pButton pRipple icon="pi pi-eye" class="p-button-rounded p-button-info" (click)="viewSale(sale)" pTooltip="Ver detalles"></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="summary">
+        <div class="flex justify-between items-center">
+          En total hay {{sales ? sales.length : 0 }} ventas.
+        </div>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-dialog [(visible)]="detailsDialog" [style]="{width: '650px'}" header="Detalles de la Venta" [modal]="true" styleClass="p-fluid">
+    <ng-template pTemplate="content" *ngIf="sale">
+      <div class="grid">
+        <div class="col-12 md:col-6">
+          <div class="p-field mb-3">
+            <label class="font-bold">Fecha:</label>
+            <div>{{formatDate(sale!.date)}}</div>
+          </div>
+          <div class="p-field mb-3">
+            <label class="font-bold">Número de Factura:</label>
+            <div>{{sale!.invoiceNumber}}</div>
+          </div>
+          <div class="p-field mb-3">
+            <label class="font-bold">Estado:</label>
+            <div>
+              <p-tag [value]="getStatusLabel(sale!.status)" [severity]="getStatusSeverity(sale!.status)"></p-tag>
+            </div>
+          </div>
+          <div class="p-field mb-3">
+            <label class="font-bold">Método de Pago:</label>
+            <div>{{getPaymentMethodLabel(sale!.paymentMethod)}}</div>
+          </div>
+        </div>
+        <div class="col-12 md:col-6">
+          <div class="p-field mb-3">
+            <label class="font-bold">Cliente:</label>
+            <div>{{sale!.customer.name}}</div>
+          </div>
+          <div class="p-field mb-3">
+            <label class="font-bold">Email:</label>
+            <div>{{sale!.customer.email}}</div>
+          </div>
+          <div class="p-field mb-3">
+            <label class="font-bold">Teléfono:</label>
+            <div>{{sale!.customer.phone}}</div>
+          </div>
+          <div class="p-field mb-3">
+            <label class="font-bold">Vendedor:</label>
+            <div>{{sale!.salesperson}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4" *ngIf="sale!.vehicle">
+        <h5 class="mb-3">Vehículo</h5>
+        <div class="p-3 border-1 border-round">
+          <div class="grid">
+            <div class="col-12 md:col-6">
+              <div class="p-field mb-2">
+                <label class="font-bold">Marca:</label>
+                <div>{{sale!.vehicle!.brand}}</div>
+              </div>
+              <div class="p-field mb-2">
+                <label class="font-bold">Modelo:</label>
+                <div>{{sale!.vehicle!.model}}</div>
+              </div>
+            </div>
+            <div class="col-12 md:col-6">
+              <div class="p-field mb-2">
+                <label class="font-bold">Año:</label>
+                <div>{{sale!.vehicle!.year}}</div>
+              </div>
+              <div class="p-field mb-2">
+                <label class="font-bold">VIN:</label>
+                <div>{{sale!.vehicle!.vin}}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4" *ngIf="sale!.parts && sale!.parts.length > 0">
+        <h5 class="mb-3">Repuestos y Servicios</h5>
+        <p-table [value]="sale!.parts || []" [tableStyle]="{'min-width': '50rem'}">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Descripción</th>
+              <th style="width: 15%">Cantidad</th>
+              <th style="width: 20%">Precio Unitario</th>
+              <th style="width: 20%">Total</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-part>
+            <tr>
+              <td>{{part.name}}</td>
+              <td>{{part.quantity}}</td>
+              <td>{{part.price | currency:'USD'}}</td>
+              <td>{{part.price * part.quantity | currency:'USD'}}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <div class="mt-4 text-right">
+        <div class="text-xl font-bold">Total: {{sale!.total | currency:'USD'}}</div>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+      <button pButton pRipple label="Cerrar" icon="pi pi-times" class="p-button-text" (click)="hideDialog()"></button>
+    </ng-template>
+  </p-dialog>
+</div>

@@ -1,0 +1,172 @@
+<div class="card">
+  <p-toast></p-toast>
+  <p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+  <div class="card">
+    <h2 class="text-2xl font-bold mb-4">Gestión de Inventario de Repuestos</h2>
+    <p class="mb-4">Administre el inventario de repuestos y accesorios automotrices.</p>
+
+    <div class="flex justify-between items-center mb-4">
+      <button pButton pRipple label="Nuevo Repuesto" icon="pi pi-plus" class="p-button-success" (click)="openNew()"></button>
+      <button pButton pRipple label="Eliminar Seleccionados" icon="pi pi-trash" class="p-button-danger" (click)="deleteSelectedParts()" [disabled]="!selectedParts || !selectedParts.length"></button>
+    </div>
+
+    <p-table 
+      #dt 
+      [value]="parts" 
+      [rows]="10" 
+      [paginator]="true" 
+      [globalFilterFields]="['name','category','sku','supplier']"
+      [tableStyle]="{'min-width': '75rem'}"
+      [(selection)]="selectedParts"
+      [rowHover]="true"
+      dataKey="id"
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} repuestos"
+      [showCurrentPageReport]="true"
+    >
+      <ng-template pTemplate="caption">
+        <div class="flex justify-between items-center">
+          <h5 class="m-0 text-lg font-medium">Inventario de Repuestos</h5>
+          <p-iconfield>
+            <p-inputicon class="pi pi-search"></p-inputicon>
+            <input pInputText type="text" placeholder="Buscar..." (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
+          </p-iconfield>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 3rem">
+            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+          </th>
+          <th pSortableColumn="name">Nombre <p-sortIcon field="name"></p-sortIcon></th>
+          <th pSortableColumn="category">Categoría <p-sortIcon field="category"></p-sortIcon></th>
+          <th pSortableColumn="sku">SKU <p-sortIcon field="sku"></p-sortIcon></th>
+          <th pSortableColumn="price">Precio <p-sortIcon field="price"></p-sortIcon></th>
+          <th pSortableColumn="stock">Stock <p-sortIcon field="stock"></p-sortIcon></th>
+          <th pSortableColumn="minStock">Stock Mínimo <p-sortIcon field="minStock"></p-sortIcon></th>
+          <th pSortableColumn="supplier">Proveedor <p-sortIcon field="supplier"></p-sortIcon></th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-part>
+        <tr>
+          <td>
+            <p-tableCheckbox [value]="part"></p-tableCheckbox>
+          </td>
+          <td>{{part.name}}</td>
+          <td>{{part.category}}</td>
+          <td>{{part.sku}}</td>
+          <td>{{part.price | currency:'USD'}}</td>
+          <td>
+            <p-tag [value]="part.stock.toString()" [severity]="getStockSeverity(part)"></p-tag>
+          </td>
+          <td>{{part.minStock}}</td>
+          <td>{{part.supplier}}</td>
+          <td>
+            <div class="flex">
+              <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" (click)="editPart(part)"></button>
+              <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-danger" (click)="deletePart(part)"></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="summary">
+        <div class="flex justify-between items-center">
+          En total hay {{parts ? parts.length : 0 }} repuestos.
+        </div>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-dialog [(visible)]="partDialog" [style]="{width: '650px'}" header="Detalles del Repuesto" [modal]="true">
+    <ng-template pTemplate="content">
+        <div class="grid grid-cols-6 gap-4">
+            <div class="col-span-6">
+                <h5 class="mb-3 text-lg font-medium">Información Básica</h5>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="name" class="block font-medium mb-2">Nombre <span class="text-red-500">*</span></label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-tag"></p-inputicon>
+                        <input type="text" pInputText id="name" [(ngModel)]="part.name" required autofocus class="w-full p-3" [ngClass]="{'ng-invalid ng-dirty': submitted && !part.name}" />
+                    </p-iconfield>
+                    <small class="p-error" *ngIf="submitted && !part.name">El nombre es requerido.</small>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="category" class="block font-medium mb-2">Categoría</label>
+                    <p-select [options]="categories" [(ngModel)]="part.category" optionLabel="label" optionValue="value" placeholder="Seleccione una categoría" class="w-full"></p-select>
+                </div>
+            </div>
+
+            <div class="col-span-6">
+                <h5 class="mb-3 mt-3 text-lg font-medium">Detalles del Repuesto</h5>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="sku" class="block font-medium mb-2">SKU</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-id-card"></p-inputicon>
+                        <input type="text" pInputText id="sku" [(ngModel)]="part.sku" class="w-full p-3" />
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="price" class="block font-medium mb-2">Precio ($)</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-dollar"></p-inputicon>
+                        <p-inputNumber id="price" [(ngModel)]="part.price" mode="currency" currency="USD" locale="en-US" styleClass="w-full"></p-inputNumber>
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-6">
+                <h5 class="mb-3 mt-3 text-lg font-medium">Información de Inventario</h5>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="stock" class="block font-medium mb-2">Stock Actual</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-box"></p-inputicon>
+                        <p-inputNumber id="stock" [(ngModel)]="part.stock" styleClass="w-full"></p-inputNumber>
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="minStock" class="block font-medium mb-2">Stock Mínimo</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-exclamation-triangle"></p-inputicon>
+                        <p-inputNumber id="minStock" [(ngModel)]="part.minStock" styleClass="w-full"></p-inputNumber>
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-6">
+                <div class="field mb-4">
+                    <label for="supplier" class="block font-medium mb-2">Proveedor</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-building"></p-inputicon>
+                        <input type="text" pInputText id="supplier" [(ngModel)]="part.supplier" class="w-full p-3" />
+                    </p-iconfield>
+                </div>
+            </div>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+        <div class="flex justify-between w-full">
+            <button pButton pRipple label="Cancelar" icon="pi pi-times" class="p-button-outlined p-button-danger" (click)="hideDialog()"></button>
+            <button pButton pRipple label="Guardar" icon="pi pi-check" class="p-button-success" (click)="savePart()"></button>
+        </div>
+    </ng-template>
+  </p-dialog>
+</div>

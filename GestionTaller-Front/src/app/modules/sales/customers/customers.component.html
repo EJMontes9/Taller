@@ -1,0 +1,167 @@
+<div class="card">
+  <p-toast></p-toast>
+  <p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+  <div class="card">
+    <h2 class="text-2xl font-bold mb-4">Gestión de Clientes</h2>
+    <p class="mb-4">Administre la información de los clientes del concesionario.</p>
+
+    <div class="flex justify-between items-center mb-4">
+      <button pButton pRipple label="Nuevo Cliente" icon="pi pi-plus" class="p-button-success" (click)="openNew()"></button>
+      <button pButton pRipple label="Eliminar Seleccionados" icon="pi pi-trash" class="p-button-danger" (click)="deleteSelectedCustomers()" [disabled]="!selectedCustomers || !selectedCustomers.length"></button>
+    </div>
+
+    <p-table 
+      #dt 
+      [value]="customers" 
+      [rows]="10" 
+      [paginator]="true" 
+      [globalFilterFields]="['name','email','phone','city']"
+      [tableStyle]="{'min-width': '75rem'}"
+      [(selection)]="selectedCustomers"
+      [rowHover]="true"
+      dataKey="id"
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} clientes"
+      [showCurrentPageReport]="true"
+    >
+      <ng-template pTemplate="caption">
+        <div class="flex justify-between items-center">
+          <h5 class="m-0">Listado de Clientes</h5>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-search"></p-inputicon>
+            <input pInputText type="text" placeholder="Buscar..." (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
+          </p-iconfield>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 3rem">
+            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+          </th>
+          <th pSortableColumn="name">Nombre <p-sortIcon field="name"></p-sortIcon></th>
+          <th pSortableColumn="email">Email <p-sortIcon field="email"></p-sortIcon></th>
+          <th pSortableColumn="phone">Teléfono <p-sortIcon field="phone"></p-sortIcon></th>
+          <th pSortableColumn="city">Ciudad <p-sortIcon field="city"></p-sortIcon></th>
+          <th pSortableColumn="registrationDate">Fecha de Registro <p-sortIcon field="registrationDate"></p-sortIcon></th>
+          <th pSortableColumn="lastPurchaseDate">Última Compra <p-sortIcon field="lastPurchaseDate"></p-sortIcon></th>
+          <th pSortableColumn="totalPurchases">Total Compras <p-sortIcon field="totalPurchases"></p-sortIcon></th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-customer>
+        <tr>
+          <td>
+            <p-tableCheckbox [value]="customer"></p-tableCheckbox>
+          </td>
+          <td>{{customer.name}}</td>
+          <td>{{customer.email}}</td>
+          <td>{{customer.phone}}</td>
+          <td>{{customer.city}}</td>
+          <td>{{formatDate(customer.registrationDate)}}</td>
+          <td>{{formatDate(customer.lastPurchaseDate)}}</td>
+          <td>{{customer.totalPurchases}}</td>
+          <td>
+            <div class="flex">
+              <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" (click)="editCustomer(customer)"></button>
+              <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-danger" (click)="deleteCustomer(customer)"></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="summary">
+        <div class="flex justify-between items-center">
+          En total hay {{customers ? customers.length : 0 }} clientes.
+        </div>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-dialog [(visible)]="customerDialog" [style]="{width: '650px'}" header="Detalles del Cliente" [modal]="true">
+    <ng-template pTemplate="content">
+        <div class="grid grid-cols-6 gap-4">
+            <!-- Información Personal -->
+            <div class="col-span-6">
+                <h5 class="mb-3 text-lg font-medium">Información Personal</h5>
+            </div>
+
+            <div class="col-span-6">
+                <div class="field mb-4">
+                    <label for="name" class="block font-medium mb-2">Nombre <span class="text-red-500">*</span></label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-user"></p-inputicon>
+                        <input type="text" pInputText id="name" [(ngModel)]="customer.name" required autofocus class="w-full p-3" [ngClass]="{'ng-invalid ng-dirty': submitted && !customer.name}" />
+                    </p-iconfield>
+                    <small class="p-error" *ngIf="submitted && !customer.name">El nombre es requerido.</small>
+                </div>
+            </div>
+
+            <!-- Información de Contacto -->
+            <div class="col-span-6">
+                <h5 class="mb-3 mt-3 text-lg font-medium">Información de Contacto</h5>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="email" class="block font-medium mb-2">Email <span class="text-red-500">*</span></label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-envelope"></p-inputicon>
+                        <input type="email" pInputText id="email" [(ngModel)]="customer.email" required class="w-full p-3" [ngClass]="{'ng-invalid ng-dirty': submitted && !customer.email}" />
+                    </p-iconfield>
+                    <small class="p-error" *ngIf="submitted && !customer.email">El email es requerido.</small>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="phone" class="block font-medium mb-2">Teléfono</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-phone"></p-inputicon>
+                        <p-inputMask id="phone" mask="999-9999" [(ngModel)]="customer.phone" placeholder="555-1234" styleClass="w-full p-3"></p-inputMask>
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <!-- Información de Dirección -->
+            <div class="col-span-6">
+                <h5 class="mb-3 mt-3 text-lg font-medium">Información de Dirección</h5>
+            </div>
+
+            <div class="col-span-6">
+                <div class="field mb-4">
+                    <label for="address" class="block font-medium mb-2">Dirección</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-map-marker"></p-inputicon>
+                        <input type="text" pInputText id="address" [(ngModel)]="customer.address" class="w-full p-3" />
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="city" class="block font-medium mb-2">Ciudad</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-building"></p-inputicon>
+                        <input type="text" pInputText id="city" [(ngModel)]="customer.city" class="w-full p-3" />
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="postalCode" class="block font-medium mb-2">Código Postal</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-hashtag"></p-inputicon>
+                        <input type="text" pInputText id="postalCode" [(ngModel)]="customer.postalCode" class="w-full p-3" />
+                    </p-iconfield>
+                </div>
+            </div>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+        <div class="flex justify-between w-full">
+            <button pButton pRipple label="Cancelar" icon="pi pi-times" class="p-button-outlined p-button-danger" (click)="hideDialog()"></button>
+            <button pButton pRipple label="Guardar" icon="pi pi-check" class="p-button-success" (click)="saveCustomer()"></button>
+        </div>
+    </ng-template>
+  </p-dialog>
+</div>

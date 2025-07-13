@@ -1,0 +1,154 @@
+<div class="card">
+  <p-toast></p-toast>
+  <p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+  <div class="card">
+    <h2 class="text-2xl font-bold mb-4">Gestión de Facturas</h2>
+    <p class="mb-4">Administre las facturas generadas en el concesionario.</p>
+
+    <p-table 
+      #dt 
+      [value]="invoices" 
+      [rows]="10" 
+      [paginator]="true" 
+      [globalFilterFields]="['number','customer.name','status']"
+      [tableStyle]="{'min-width': '75rem'}"
+      [(selection)]="selectedInvoices"
+      [rowHover]="true"
+      dataKey="id"
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} facturas"
+      [showCurrentPageReport]="true"
+    >
+      <ng-template pTemplate="caption">
+        <div class="flex justify-between items-center">
+          <h5 class="m-0">Listado de Facturas</h5>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-search"></p-inputicon>
+            <input pInputText type="text" placeholder="Buscar..." (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
+          </p-iconfield>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 3rem">
+            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+          </th>
+          <th pSortableColumn="number">Número <p-sortIcon field="number"></p-sortIcon></th>
+          <th pSortableColumn="date">Fecha <p-sortIcon field="date"></p-sortIcon></th>
+          <th pSortableColumn="customer.name">Cliente <p-sortIcon field="customer.name"></p-sortIcon></th>
+          <th pSortableColumn="amount">Monto <p-sortIcon field="amount"></p-sortIcon></th>
+          <th pSortableColumn="status">Estado <p-sortIcon field="status"></p-sortIcon></th>
+          <th pSortableColumn="paymentMethod">Método de Pago <p-sortIcon field="paymentMethod"></p-sortIcon></th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-invoice>
+        <tr>
+          <td>
+            <p-tableCheckbox [value]="invoice"></p-tableCheckbox>
+          </td>
+          <td>{{invoice?.number}}</td>
+          <td>{{formatDate(invoice?.date)}}</td>
+          <td>{{invoice?.customer?.name}}</td>
+          <td>{{invoice?.amount | currency:'USD'}}</td>
+          <td>
+            <p-tag [value]="getStatusLabel(invoice?.status)" [severity]="getStatusSeverity(invoice?.status)"></p-tag>
+          </td>
+          <td>{{getPaymentMethodLabel(invoice?.paymentMethod)}}</td>
+          <td>
+            <div class="flex">
+              <button pButton pRipple icon="pi pi-eye" class="p-button-rounded p-button-info mr-2" (click)="viewInvoice(invoice!)" pTooltip="Ver detalles"></button>
+              <button pButton pRipple icon="pi pi-print" class="p-button-rounded p-button-secondary mr-2" (click)="printInvoice(invoice!)" pTooltip="Imprimir"></button>
+              <button pButton pRipple icon="pi pi-envelope" class="p-button-rounded p-button-success mr-2" (click)="sendInvoice(invoice!)" pTooltip="Enviar por email"></button>
+              <button pButton pRipple icon="pi pi-times" class="p-button-rounded p-button-danger" (click)="cancelInvoice(invoice!)" [disabled]="invoice?.status === 'anulada'" pTooltip="Anular factura"></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="summary">
+        <div class="flex justify-between items-center">
+          En total hay {{invoices ? invoices.length : 0 }} facturas.
+        </div>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-dialog [(visible)]="detailsDialog" [style]="{width: '650px'}" header="Detalles de la Factura" [modal]="true">
+    <ng-template pTemplate="content">
+      <div *ngIf="invoice">
+        <div class="flex flex-wrap">
+          <div class="w-full md:w-1/2 p-3">
+            <div class="mb-3">
+              <label class="font-bold">Número de Factura:</label>
+              <div>{{invoice?.number}}</div>
+            </div>
+            <div class="mb-3">
+              <label class="font-bold">Fecha:</label>
+              <div>{{formatDate(invoice?.date)}}</div>
+            </div>
+            <div class="mb-3" *ngIf="invoice?.dueDate">
+              <label class="font-bold">Fecha de Vencimiento:</label>
+              <div>{{formatDate(invoice?.dueDate)}}</div>
+            </div>
+            <div class="mb-3">
+              <label class="font-bold">Estado:</label>
+              <div>
+                <p-tag [value]="getStatusLabel(invoice?.status)" [severity]="getStatusSeverity(invoice?.status)"></p-tag>
+              </div>
+            </div>
+          </div>
+          <div class="w-full md:w-1/2 p-3">
+            <div class="mb-3">
+              <label class="font-bold">Cliente:</label>
+              <div>{{invoice?.customer?.name}}</div>
+            </div>
+            <div class="mb-3">
+              <label class="font-bold">Email:</label>
+              <div>{{invoice?.customer?.email}}</div>
+            </div>
+            <div class="mb-3">
+              <label class="font-bold">Método de Pago:</label>
+              <div>{{getPaymentMethodLabel(invoice?.paymentMethod)}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4" *ngIf="invoice">
+        <h5 class="mb-3">Detalle de Productos</h5>
+        <div class="border rounded overflow-hidden">
+          <!-- Header -->
+          <div class="flex bg-gray-100 font-bold">
+            <div class="flex-1 p-3">Descripción</div>
+            <div class="w-1/6 p-3 text-center">Cantidad</div>
+            <div class="w-1/5 p-3 text-right">Precio Unitario</div>
+            <div class="w-1/5 p-3 text-right">Total</div>
+          </div>
+
+          <!-- Items -->
+          <div *ngFor="let item of invoice.items || []" class="flex border-t">
+            <div class="flex-1 p-3">{{item?.description}}</div>
+            <div class="w-1/6 p-3 text-center">{{item?.quantity}}</div>
+            <div class="w-1/5 p-3 text-right">{{item?.unitPrice | currency:'USD'}}</div>
+            <div class="w-1/5 p-3 text-right">{{item?.total | currency:'USD'}}</div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex border-t bg-gray-50">
+            <div class="flex-1 p-3 text-right font-bold">Total:</div>
+            <div class="w-1/5 p-3 text-right font-bold">{{calculateTotal(invoice!.items || []) | currency:'USD'}}</div>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+      <div class="flex justify-between">
+        <button pButton pRipple label="Cerrar" icon="pi pi-times" class="p-button-outlined p-button-danger" (click)="hideDialog()"></button>
+        <div *ngIf="invoice">
+          <button pButton pRipple label="Imprimir" icon="pi pi-print" class="p-button-secondary mr-2" (click)="printInvoice(invoice!)"></button>
+          <button pButton pRipple label="Enviar por Email" icon="pi pi-envelope" class="p-button-success" (click)="sendInvoice(invoice!)"></button>
+        </div>
+      </div>
+    </ng-template>
+  </p-dialog>
+</div>

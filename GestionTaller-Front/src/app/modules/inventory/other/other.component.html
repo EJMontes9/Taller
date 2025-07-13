@@ -1,0 +1,170 @@
+<div class="card">
+  <p-toast></p-toast>
+  <p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+  <div class="card">
+    <h2 class="text-2xl font-bold mb-4">Gestión de Inventario Misceláneo</h2>
+    <p class="mb-4">Administre el inventario de artículos misceláneos del concesionario.</p>
+
+    <div class="flex justify-between items-center mb-4">
+      <button pButton pRipple label="Nuevo Artículo" icon="pi pi-plus" class="p-button-success" (click)="openNew()"></button>
+      <button pButton pRipple label="Eliminar Seleccionados" icon="pi pi-trash" class="p-button-danger" (click)="deleteSelectedItems()" [disabled]="!selectedItems || !selectedItems.length"></button>
+    </div>
+
+    <p-table 
+      #dt 
+      [value]="items" 
+      [rows]="10" 
+      [paginator]="true" 
+      [globalFilterFields]="['name','category','description','location']"
+      [tableStyle]="{'min-width': '75rem'}"
+      [(selection)]="selectedItems"
+      [rowHover]="true"
+      dataKey="id"
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} artículos"
+      [showCurrentPageReport]="true"
+    >
+      <ng-template pTemplate="caption">
+        <div class="flex justify-between items-center">
+          <h5 class="m-0">Inventario Misceláneo</h5>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-search"></p-inputicon>
+            <input pInputText type="text" placeholder="Buscar..." (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
+          </p-iconfield>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 3rem">
+            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+          </th>
+          <th pSortableColumn="name">Nombre <p-sortIcon field="name"></p-sortIcon></th>
+          <th pSortableColumn="category">Categoría <p-sortIcon field="category"></p-sortIcon></th>
+          <th pSortableColumn="description">Descripción <p-sortIcon field="description"></p-sortIcon></th>
+          <th pSortableColumn="quantity">Cantidad <p-sortIcon field="quantity"></p-sortIcon></th>
+          <th pSortableColumn="location">Ubicación <p-sortIcon field="location"></p-sortIcon></th>
+          <th pSortableColumn="purchaseDate">Fecha de Compra <p-sortIcon field="purchaseDate"></p-sortIcon></th>
+          <th pSortableColumn="purchasePrice">Precio de Compra <p-sortIcon field="purchasePrice"></p-sortIcon></th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-item>
+        <tr>
+          <td>
+            <p-tableCheckbox [value]="item"></p-tableCheckbox>
+          </td>
+          <td>{{item.name}}</td>
+          <td>{{item.category}}</td>
+          <td>{{item.description}}</td>
+          <td>{{item.quantity}}</td>
+          <td>{{item.location}}</td>
+          <td>{{formatDate(item.purchaseDate)}}</td>
+          <td>{{item.purchasePrice | currency:'USD'}}</td>
+          <td>
+            <div class="flex">
+              <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" (click)="editItem(item)"></button>
+              <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-danger" (click)="deleteItem(item)"></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="summary">
+        <div class="flex justify-between items-center">
+          En total hay {{items ? items.length : 0 }} artículos.
+        </div>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-dialog [(visible)]="itemDialog" [style]="{width: '650px'}" header="Detalles del Artículo" [modal]="true">
+    <ng-template pTemplate="content">
+        <div class="grid grid-cols-6 gap-4">
+            <div class="col-span-6">
+                <h5 class="mb-3 text-lg font-medium">Información Básica</h5>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="name" class="block font-medium mb-2">Nombre <span class="text-red-500">*</span></label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-tag"></p-inputicon>
+                        <input type="text" pInputText id="name" [(ngModel)]="item.name" required autofocus class="w-full p-3" [ngClass]="{'ng-invalid ng-dirty': submitted && !item.name}" />
+                    </p-iconfield>
+                    <small class="p-error" *ngIf="submitted && !item.name">El nombre es requerido.</small>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="category" class="block font-medium mb-2">Categoría</label>
+                    <p-select [options]="categories" [(ngModel)]="item.category" optionLabel="label" optionValue="value" placeholder="Seleccione una categoría" class="w-full"></p-select>
+                </div>
+            </div>
+
+            <div class="col-span-6">
+                <div class="field mb-4">
+                    <label for="description" class="block font-medium mb-2">Descripción</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-align-left"></p-inputicon>
+                        <textarea pInputTextarea id="description" [(ngModel)]="item.description" rows="3" class="w-full p-3"></textarea>
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-6">
+                <h5 class="mb-3 mt-3 text-lg font-medium">Detalles del Inventario</h5>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="quantity" class="block font-medium mb-2">Cantidad</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-hashtag"></p-inputicon>
+                        <p-inputNumber id="quantity" [(ngModel)]="item.quantity" styleClass="w-full"></p-inputNumber>
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="location" class="block font-medium mb-2">Ubicación</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-map-marker"></p-inputicon>
+                        <input type="text" pInputText id="location" [(ngModel)]="item.location" class="w-full p-3" />
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-6">
+                <h5 class="mb-3 mt-3 text-lg font-medium">Información de Compra</h5>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="purchaseDate" class="block font-medium mb-2">Fecha de Compra</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-calendar"></p-inputicon>
+                        <input type="date" pInputText id="purchaseDate" [(ngModel)]="item.purchaseDate" class="w-full p-3" />
+                    </p-iconfield>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="purchasePrice" class="block font-medium mb-2">Precio de Compra ($)</label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-dollar"></p-inputicon>
+                        <p-inputNumber id="purchasePrice" [(ngModel)]="item.purchasePrice" mode="currency" currency="USD" locale="en-US" styleClass="w-full"></p-inputNumber>
+                    </p-iconfield>
+                </div>
+            </div>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+        <div class="flex justify-between w-full">
+            <button pButton pRipple label="Cancelar" icon="pi pi-times" class="p-button-outlined p-button-danger" (click)="hideDialog()"></button>
+            <button pButton pRipple label="Guardar" icon="pi pi-check" class="p-button-success" (click)="saveItem()"></button>
+        </div>
+    </ng-template>
+  </p-dialog>
+</div>
