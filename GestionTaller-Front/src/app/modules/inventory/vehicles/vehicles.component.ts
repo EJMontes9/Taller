@@ -12,17 +12,8 @@ import { SelectModule } from 'primeng/select';
 import { CurrencyPipe, NgClass } from "@angular/common";
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-
-interface Vehicle {
-  id: number;
-  brand: string;
-  model: string;
-  year: number;
-  color: string;
-  price: number;
-  status: string;
-  vin: string;
-}
+import { InventoryService, Vehicle } from '../../../core/inventory.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-vehicles',
@@ -55,63 +46,13 @@ export class VehiclesComponent implements OnInit {
 
   constructor(
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private inventoryService: InventoryService
   ) {}
 
   ngOnInit() {
-    // Simular datos que vendrían del backend
-    this.vehicles = [
-      {
-        id: 1,
-        brand: 'Toyota',
-        model: 'Corolla',
-        year: 2023,
-        color: 'Blanco',
-        price: 25000,
-        status: 'disponible',
-        vin: 'ABC123456789'
-      },
-      {
-        id: 2,
-        brand: 'Honda',
-        model: 'Civic',
-        year: 2022,
-        color: 'Negro',
-        price: 23500,
-        status: 'disponible',
-        vin: 'DEF987654321'
-      },
-      {
-        id: 3,
-        brand: 'Ford',
-        model: 'Mustang',
-        year: 2023,
-        color: 'Rojo',
-        price: 45000,
-        status: 'vendido',
-        vin: 'GHI456789123'
-      },
-      {
-        id: 4,
-        brand: 'Chevrolet',
-        model: 'Camaro',
-        year: 2022,
-        color: 'Amarillo',
-        price: 48000,
-        status: 'disponible',
-        vin: 'JKL789123456'
-      },
-      {
-        id: 5,
-        brand: 'Nissan',
-        model: 'Sentra',
-        year: 2023,
-        color: 'Gris',
-        price: 22000,
-        status: 'disponible',
-        vin: 'MNO321654987'
-      }
-    ];
+    // Cargar datos desde el backend
+    this.loadVehicles();
 
     this.statuses = [
       { label: 'Disponible', value: 'disponible' },
@@ -132,9 +73,25 @@ export class VehiclesComponent implements OnInit {
       header: 'Confirmar',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.vehicles = this.vehicles.filter(val => !this.selectedVehicles.includes(val));
-        this.selectedVehicles = [];
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Vehículos eliminados', life: 3000 });
+        // Crear un array de observables para eliminar cada vehículo
+        const deleteObservables = this.selectedVehicles.map(vehicle => 
+          this.inventoryService.deleteVehicle(vehicle.id)
+        );
+
+        // Usar forkJoin para esperar a que todas las eliminaciones se completen
+        if (deleteObservables.length > 0) {
+          forkJoin(deleteObservables).subscribe({
+            next: () => {
+              this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Vehículos eliminados', life: 3000 });
+              this.selectedVehicles = [];
+              this.loadVehicles();
+            },
+            error: (error) => {
+              this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al eliminar vehículos', life: 3000 });
+              console.error('Error deleting vehicles', error);
+            }
+          });
+        }
       }
     });
   }
@@ -150,9 +107,16 @@ export class VehiclesComponent implements OnInit {
       header: 'Confirmar',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.vehicles = this.vehicles.filter(val => val.id !== vehicle.id);
-        this.vehicle = this.initializeNewVehicle();
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Vehículo eliminado', life: 3000 });
+        this.inventoryService.deleteVehicle(vehicle.id).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Vehículo eliminado', life: 3000 });
+            this.loadVehicles();
+          },
+          error: (error) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al eliminar vehículo', life: 3000 });
+            console.error('Error deleting vehicle', error);
+          }
+        });
       }
     });
   }
@@ -162,25 +126,48 @@ export class VehiclesComponent implements OnInit {
     this.submitted = false;
   }
 
+  loadVehicles() {
+    this.inventoryService.getVehicles().subscribe({
+      next: (data) => {
+        this.vehicles = data;
+      },
+      error: (error) => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar vehículos', life: 3000 });
+        console.error('Error loading vehicles', error);
+      }
+    });
+  }
+
   saveVehicle() {
     this.submitted = true;
 
     if (this.vehicle.brand.trim() && this.vehicle.model.trim()) {
       if (this.vehicle.id) {
         // Actualizar vehículo existente
-        const index = this.findIndexById(this.vehicle.id);
-        if (index !== -1) {
-          this.vehicles[index] = this.vehicle;
-          this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Vehículo actualizado', life: 3000 });
-        }
+        this.inventoryService.updateVehicle(this.vehicle).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Vehículo actualizado', life: 3000 });
+            this.loadVehicles();
+          },
+          error: (error) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar vehículo', life: 3000 });
+            console.error('Error updating vehicle', error);
+          }
+        });
       } else {
         // Crear nuevo vehículo
-        this.vehicle.id = this.createId();
-        this.vehicles.push(this.vehicle);
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Vehículo creado', life: 3000 });
+        this.inventoryService.createVehicle(this.vehicle).subscribe({
+          next: (vehicle) => {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Vehículo creado', life: 3000 });
+            this.loadVehicles();
+          },
+          error: (error) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al crear vehículo', life: 3000 });
+            console.error('Error creating vehicle', error);
+          }
+        });
       }
 
-      this.vehicles = [...this.vehicles];
       this.vehicleDialog = false;
       this.vehicle = this.initializeNewVehicle();
     }

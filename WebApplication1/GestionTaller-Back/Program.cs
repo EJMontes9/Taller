@@ -1,5 +1,7 @@
 using GestionTaller_Back.Data;
+using GestionTaller_Back.Formatters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -11,7 +13,21 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://*:8080");
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Add XML formatters
+    options.OutputFormatters.Add(new GestionTaller_Back.Formatters.XmlSerializerOutputFormatter());
+    options.InputFormatters.Add(new GestionTaller_Back.Formatters.XmlSerializerInputFormatter());
+
+    // Set XML as the default format
+    options.FormatterMappings.SetMediaTypeMappingForFormat("xml", "application/xml");
+    options.FormatterMappings.SetMediaTypeMappingForFormat("json", "application/json");
+
+    // Remove JSON formatters to force XML
+    options.OutputFormatters.RemoveType<Microsoft.AspNetCore.Mvc.Formatters.SystemTextJsonOutputFormatter>();
+    options.InputFormatters.RemoveType<Microsoft.AspNetCore.Mvc.Formatters.SystemTextJsonInputFormatter>();
+})
+.AddXmlSerializerFormatters(); // This adds the built-in XML formatters as a fallback
 builder.Services.AddEndpointsApiExplorer();
 
 // Configure Swagger
