@@ -43,7 +43,9 @@ namespace GestionTaller_Back.Helpers
                         typeof(PartWrapper),
                         typeof(PartsWrapper),
                         typeof(InventoryItemWrapper),
-                        typeof(InventoryItemsWrapper)
+                        typeof(InventoryItemsWrapper),
+                        typeof(ClienteWrapper),
+                        typeof(ClientesWrapper)
                     };
 
                     serializer = new XmlSerializer(typeof(T), knownTypes);
@@ -118,7 +120,9 @@ namespace GestionTaller_Back.Helpers
                     typeof(PartWrapper),
                     typeof(PartsWrapper),
                     typeof(InventoryItemWrapper),
-                    typeof(InventoryItemsWrapper)
+                    typeof(InventoryItemsWrapper),
+                    typeof(ClienteWrapper),
+                    typeof(ClientesWrapper)
                 };
 
                 serializer = new XmlSerializer(typeof(XmlSerializerWrapper<T>), knownTypes);

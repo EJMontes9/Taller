@@ -16,7 +16,7 @@
       [value]="customers" 
       [rows]="10" 
       [paginator]="true" 
-      [globalFilterFields]="['name','email','phone','city']"
+      [globalFilterFields]="['nombre','apellido','email','telefono']"
       [tableStyle]="{'min-width': '75rem'}"
       [(selection)]="selectedCustomers"
       [rowHover]="true"
@@ -38,28 +38,22 @@
           <th style="width: 3rem">
             <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
           </th>
-          <th pSortableColumn="name">Nombre <p-sortIcon field="name"></p-sortIcon></th>
+          <th pSortableColumn="nombre">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+          <th pSortableColumn="apellido">Apellido <p-sortIcon field="apellido"></p-sortIcon></th>
           <th pSortableColumn="email">Email <p-sortIcon field="email"></p-sortIcon></th>
-          <th pSortableColumn="phone">Teléfono <p-sortIcon field="phone"></p-sortIcon></th>
-          <th pSortableColumn="city">Ciudad <p-sortIcon field="city"></p-sortIcon></th>
-          <th pSortableColumn="registrationDate">Fecha de Registro <p-sortIcon field="registrationDate"></p-sortIcon></th>
-          <th pSortableColumn="lastPurchaseDate">Última Compra <p-sortIcon field="lastPurchaseDate"></p-sortIcon></th>
-          <th pSortableColumn="totalPurchases">Total Compras <p-sortIcon field="totalPurchases"></p-sortIcon></th>
+          <th pSortableColumn="telefono">Teléfono <p-sortIcon field="telefono"></p-sortIcon></th>
           <th></th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-customer>
         <tr>
-          <td>
+          <td style="width: 3rem">
             <p-tableCheckbox [value]="customer"></p-tableCheckbox>
           </td>
-          <td>{{customer.name}}</td>
+          <td>{{customer.nombre}}</td>
+          <td>{{customer.apellido}}</td>
           <td>{{customer.email}}</td>
-          <td>{{customer.phone}}</td>
-          <td>{{customer.city}}</td>
-          <td>{{formatDate(customer.registrationDate)}}</td>
-          <td>{{formatDate(customer.lastPurchaseDate)}}</td>
-          <td>{{customer.totalPurchases}}</td>
+          <td>{{customer.telefono}}</td>
           <td>
             <div class="flex">
               <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" (click)="editCustomer(customer)"></button>
@@ -84,14 +78,25 @@
                 <h5 class="mb-3 text-lg font-medium">Información Personal</h5>
             </div>
 
-            <div class="col-span-6">
+            <div class="col-span-3">
                 <div class="field mb-4">
-                    <label for="name" class="block font-medium mb-2">Nombre <span class="text-red-500">*</span></label>
+                    <label for="nombre" class="block font-medium mb-2">Nombre <span class="text-red-500">*</span></label>
                     <p-iconfield class="w-full">
                         <p-inputicon styleClass="pi pi-user"></p-inputicon>
-                        <input type="text" pInputText id="name" [(ngModel)]="customer.name" required autofocus class="w-full p-3" [ngClass]="{'ng-invalid ng-dirty': submitted && !customer.name}" />
+                        <input type="text" pInputText id="nombre" [(ngModel)]="customer.nombre" required autofocus class="w-full p-3" [ngClass]="{'ng-invalid ng-dirty': submitted && !customer.nombre}" />
                     </p-iconfield>
-                    <small class="p-error" *ngIf="submitted && !customer.name">El nombre es requerido.</small>
+                    <small class="p-error" *ngIf="submitted && !customer.nombre">El nombre es requerido.</small>
+                </div>
+            </div>
+
+            <div class="col-span-3">
+                <div class="field mb-4">
+                    <label for="apellido" class="block font-medium mb-2">Apellido <span class="text-red-500">*</span></label>
+                    <p-iconfield class="w-full">
+                        <p-inputicon styleClass="pi pi-user"></p-inputicon>
+                        <input type="text" pInputText id="apellido" [(ngModel)]="customer.apellido" required class="w-full p-3" [ngClass]="{'ng-invalid ng-dirty': submitted && !customer.apellido}" />
+                    </p-iconfield>
+                    <small class="p-error" *ngIf="submitted && !customer.apellido">El apellido es requerido.</small>
                 </div>
             </div>
 
@@ -113,45 +118,10 @@
 
             <div class="col-span-3">
                 <div class="field mb-4">
-                    <label for="phone" class="block font-medium mb-2">Teléfono</label>
+                    <label for="telefono" class="block font-medium mb-2">Teléfono</label>
                     <p-iconfield class="w-full">
                         <p-inputicon styleClass="pi pi-phone"></p-inputicon>
-                        <p-inputMask id="phone" mask="999-9999" [(ngModel)]="customer.phone" placeholder="555-1234" styleClass="w-full p-3"></p-inputMask>
-                    </p-iconfield>
-                </div>
-            </div>
-
-            <!-- Información de Dirección -->
-            <div class="col-span-6">
-                <h5 class="mb-3 mt-3 text-lg font-medium">Información de Dirección</h5>
-            </div>
-
-            <div class="col-span-6">
-                <div class="field mb-4">
-                    <label for="address" class="block font-medium mb-2">Dirección</label>
-                    <p-iconfield class="w-full">
-                        <p-inputicon styleClass="pi pi-map-marker"></p-inputicon>
-                        <input type="text" pInputText id="address" [(ngModel)]="customer.address" class="w-full p-3" />
-                    </p-iconfield>
-                </div>
-            </div>
-
-            <div class="col-span-3">
-                <div class="field mb-4">
-                    <label for="city" class="block font-medium mb-2">Ciudad</label>
-                    <p-iconfield class="w-full">
-                        <p-inputicon styleClass="pi pi-building"></p-inputicon>
-                        <input type="text" pInputText id="city" [(ngModel)]="customer.city" class="w-full p-3" />
-                    </p-iconfield>
-                </div>
-            </div>
-
-            <div class="col-span-3">
-                <div class="field mb-4">
-                    <label for="postalCode" class="block font-medium mb-2">Código Postal</label>
-                    <p-iconfield class="w-full">
-                        <p-inputicon styleClass="pi pi-hashtag"></p-inputicon>
-                        <input type="text" pInputText id="postalCode" [(ngModel)]="customer.postalCode" class="w-full p-3" />
+                        <p-inputMask id="telefono" mask="999-9999" [(ngModel)]="customer.telefono" placeholder="555-1234" styleClass="w-full p-3"></p-inputMask>
                     </p-iconfield>
                 </div>
             </div>
