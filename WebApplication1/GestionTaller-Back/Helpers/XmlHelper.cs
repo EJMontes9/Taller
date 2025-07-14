@@ -6,6 +6,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 using GestionTaller_Back.Models;
+using GestionTaller_Back.Controllers;
 
 namespace GestionTaller_Back.Helpers
 {
@@ -35,7 +36,14 @@ namespace GestionTaller_Back.Helpers
                         typeof(Part), 
                         typeof(InventoryItem),
                         typeof(Cliente),
-                        typeof(User)
+                        typeof(User),
+                        // Wrapper classes from controllers
+                        typeof(VehicleWrapper),
+                        typeof(VehiclesWrapper),
+                        typeof(PartWrapper),
+                        typeof(PartsWrapper),
+                        typeof(InventoryItemWrapper),
+                        typeof(InventoryItemsWrapper)
                     };
 
                     serializer = new XmlSerializer(typeof(T), knownTypes);
@@ -103,7 +111,14 @@ namespace GestionTaller_Back.Helpers
                     typeof(InventoryItem),
                     typeof(Cliente),
                     typeof(User),
-                    typeof(XmlSerializerWrapper<T>)
+                    typeof(XmlSerializerWrapper<T>),
+                    // Wrapper classes from controllers
+                    typeof(VehicleWrapper),
+                    typeof(VehiclesWrapper),
+                    typeof(PartWrapper),
+                    typeof(PartsWrapper),
+                    typeof(InventoryItemWrapper),
+                    typeof(InventoryItemsWrapper)
                 };
 
                 serializer = new XmlSerializer(typeof(XmlSerializerWrapper<T>), knownTypes);

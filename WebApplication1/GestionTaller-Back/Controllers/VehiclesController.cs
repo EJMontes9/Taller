@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Xml.Serialization;
 using GestionTaller_Back.Data;
 using GestionTaller_Back.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +12,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GestionTaller_Back.Controllers
 {
+    // Wrapper classes for XML serialization
+    public class VehicleWrapper
+    {
+        public Vehicle Vehicle { get; set; }
+
+        public VehicleWrapper() { }
+
+        public VehicleWrapper(Vehicle vehicle)
+        {
+            Vehicle = vehicle;
+        }
+    }
+
+    public class VehiclesWrapper
+    {
+        public List<VehicleWrapper> Vehicles { get; set; } = new List<VehicleWrapper>();
+
+        public VehiclesWrapper() { }
+
+        public VehiclesWrapper(IEnumerable<Vehicle> vehicles)
+        {
+            if (vehicles != null)
+            {
+                Vehicles = vehicles.Select(v => new VehicleWrapper(v)).ToList();
+            }
+        }
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     public class VehiclesController : ControllerBase
@@ -27,10 +56,14 @@ namespace GestionTaller_Back.Controllers
         // GET: api/Vehicles
         [HttpGet]
         [Produces("application/xml")]
-        public async Task<ActionResult<IEnumerable<Vehicle>>> GetVehicles()
+        public async Task<ActionResult> GetVehicles()
         {
             _logger.LogInformation("Getting all vehicles");
-            return await _context.Vehicles.ToListAsync();
+            var vehicles = await _context.Vehicles.ToListAsync();
+
+            // Create a wrapper object to ensure proper XML serialization
+            var wrapper = new VehiclesWrapper(vehicles);
+            return Ok(wrapper);
         }
 
         // GET: api/Vehicles/5

@@ -134,6 +134,16 @@ export class InventoryService {
     }).pipe(
       map(xml => {
         const parsed = this.parseXml(xml);
+        console.log('Parsed XML:', parsed); // Debug log
+
+        // Navigate through the nested structure:
+        // anyType -> VehiclesWrapper -> Vehicles -> VehicleWrapper -> Vehicle
+        if (parsed.anyType && parsed.anyType.Vehicles && parsed.anyType.Vehicles.VehicleWrapper) {
+          // Extract vehicles from the wrapper structure
+          return parsed.anyType.Vehicles.VehicleWrapper.map((wrapper: any) => wrapper.Vehicle);
+        }
+
+        // Fallback to the original path in case the structure changes
         return parsed.Vehicles?.Vehicle || [];
       }),
       catchError(error => {
@@ -201,6 +211,16 @@ export class InventoryService {
     }).pipe(
       map(xml => {
         const parsed = this.parseXml(xml);
+        console.log('Parsed Parts XML:', parsed); // Debug log
+
+        // Navigate through the nested structure:
+        // anyType -> PartsWrapper -> Parts -> PartWrapper -> Part
+        if (parsed.anyType && parsed.anyType.Parts && parsed.anyType.Parts.PartWrapper) {
+          // Extract parts from the wrapper structure
+          return parsed.anyType.Parts.PartWrapper.map((wrapper: any) => wrapper.Part);
+        }
+
+        // Fallback to the original path in case the structure changes
         return parsed.Parts?.Part || [];
       }),
       catchError(error => {
@@ -267,6 +287,16 @@ export class InventoryService {
     }).pipe(
       map(xml => {
         const parsed = this.parseXml(xml);
+        console.log('Parsed Low Stock Parts XML:', parsed); // Debug log
+
+        // Navigate through the nested structure:
+        // anyType -> PartsWrapper -> Parts -> PartWrapper -> Part
+        if (parsed.anyType && parsed.anyType.Parts && parsed.anyType.Parts.PartWrapper) {
+          // Extract parts from the wrapper structure
+          return parsed.anyType.Parts.PartWrapper.map((wrapper: any) => wrapper.Part);
+        }
+
+        // Fallback to the original path in case the structure changes
         return parsed.Parts?.Part || [];
       }),
       catchError(error => {
@@ -284,6 +314,16 @@ export class InventoryService {
     }).pipe(
       map(xml => {
         const parsed = this.parseXml(xml);
+        console.log('Parsed Inventory Items XML:', parsed); // Debug log
+
+        // Navigate through the nested structure:
+        // anyType -> InventoryItemsWrapper -> InventoryItems -> InventoryItemWrapper -> InventoryItem
+        if (parsed.anyType && parsed.anyType.InventoryItems && parsed.anyType.InventoryItems.InventoryItemWrapper) {
+          // Extract inventory items from the wrapper structure
+          return parsed.anyType.InventoryItems.InventoryItemWrapper.map((wrapper: any) => wrapper.InventoryItem);
+        }
+
+        // Fallback to the original path in case the structure changes
         return parsed.InventoryItems?.InventoryItem || [];
       }),
       catchError(error => {
@@ -350,6 +390,16 @@ export class InventoryService {
     }).pipe(
       map(xml => {
         const parsed = this.parseXml(xml);
+        console.log(`Parsed Inventory Items by Category (${category}) XML:`, parsed); // Debug log
+
+        // Navigate through the nested structure:
+        // anyType -> InventoryItemsWrapper -> InventoryItems -> InventoryItemWrapper -> InventoryItem
+        if (parsed.anyType && parsed.anyType.InventoryItems && parsed.anyType.InventoryItems.InventoryItemWrapper) {
+          // Extract inventory items from the wrapper structure
+          return parsed.anyType.InventoryItems.InventoryItemWrapper.map((wrapper: any) => wrapper.InventoryItem);
+        }
+
+        // Fallback to the original path in case the structure changes
         return parsed.InventoryItems?.InventoryItem || [];
       }),
       catchError(error => {

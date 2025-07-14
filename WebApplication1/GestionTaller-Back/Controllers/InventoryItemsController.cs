@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Xml.Serialization;
 using GestionTaller_Back.Data;
 using GestionTaller_Back.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +12,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GestionTaller_Back.Controllers
 {
+    // Wrapper classes for XML serialization
+    public class InventoryItemWrapper
+    {
+        public InventoryItem InventoryItem { get; set; }
+
+        public InventoryItemWrapper() { }
+
+        public InventoryItemWrapper(InventoryItem item)
+        {
+            InventoryItem = item;
+        }
+    }
+
+    public class InventoryItemsWrapper
+    {
+        public List<InventoryItemWrapper> InventoryItems { get; set; } = new List<InventoryItemWrapper>();
+
+        public InventoryItemsWrapper() { }
+
+        public InventoryItemsWrapper(IEnumerable<InventoryItem> items)
+        {
+            if (items != null)
+            {
+                InventoryItems = items.Select(i => new InventoryItemWrapper(i)).ToList();
+            }
+        }
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     public class InventoryItemsController : ControllerBase
@@ -27,10 +56,14 @@ namespace GestionTaller_Back.Controllers
         // GET: api/InventoryItems
         [HttpGet]
         [Produces("application/xml")]
-        public async Task<ActionResult<IEnumerable<InventoryItem>>> GetInventoryItems()
+        public async Task<ActionResult> GetInventoryItems()
         {
             _logger.LogInformation("Getting all inventory items");
-            return await _context.InventoryItems.ToListAsync();
+            var items = await _context.InventoryItems.ToListAsync();
+
+            // Create a wrapper object to ensure proper XML serialization
+            var wrapper = new InventoryItemsWrapper(items);
+            return Ok(wrapper);
         }
 
         // GET: api/InventoryItems/5
@@ -120,12 +153,16 @@ namespace GestionTaller_Back.Controllers
         // GET: api/InventoryItems/ByCategory/{category}
         [HttpGet("ByCategory/{category}")]
         [Produces("application/xml")]
-        public async Task<ActionResult<IEnumerable<InventoryItem>>> GetInventoryItemsByCategory(string category)
+        public async Task<ActionResult> GetInventoryItemsByCategory(string category)
         {
             _logger.LogInformation("Getting inventory items by category: {Category}", category);
-            return await _context.InventoryItems
+            var items = await _context.InventoryItems
                 .Where(i => i.Category.ToLower() == category.ToLower())
                 .ToListAsync();
+
+            // Create a wrapper object to ensure proper XML serialization
+            var wrapper = new InventoryItemsWrapper(items);
+            return Ok(wrapper);
         }
 
         private bool InventoryItemExists(int id)

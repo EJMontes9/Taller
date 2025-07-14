@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Xml.Serialization;
 using GestionTaller_Back.Data;
 using GestionTaller_Back.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +12,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GestionTaller_Back.Controllers
 {
+    // Wrapper classes for XML serialization
+    public class PartWrapper
+    {
+        public Part Part { get; set; }
+
+        public PartWrapper() { }
+
+        public PartWrapper(Part part)
+        {
+            Part = part;
+        }
+    }
+
+    public class PartsWrapper
+    {
+        public List<PartWrapper> Parts { get; set; } = new List<PartWrapper>();
+
+        public PartsWrapper() { }
+
+        public PartsWrapper(IEnumerable<Part> parts)
+        {
+            if (parts != null)
+            {
+                Parts = parts.Select(p => new PartWrapper(p)).ToList();
+            }
+        }
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     public class PartsController : ControllerBase
@@ -27,10 +56,14 @@ namespace GestionTaller_Back.Controllers
         // GET: api/Parts
         [HttpGet]
         [Produces("application/xml")]
-        public async Task<ActionResult<IEnumerable<Part>>> GetParts()
+        public async Task<ActionResult> GetParts()
         {
             _logger.LogInformation("Getting all parts");
-            return await _context.Parts.ToListAsync();
+            var parts = await _context.Parts.ToListAsync();
+
+            // Create a wrapper object to ensure proper XML serialization
+            var wrapper = new PartsWrapper(parts);
+            return Ok(wrapper);
         }
 
         // GET: api/Parts/5
@@ -120,12 +153,16 @@ namespace GestionTaller_Back.Controllers
         // GET: api/Parts/LowStock
         [HttpGet("LowStock")]
         [Produces("application/xml")]
-        public async Task<ActionResult<IEnumerable<Part>>> GetLowStockParts()
+        public async Task<ActionResult> GetLowStockParts()
         {
             _logger.LogInformation("Getting parts with low stock");
-            return await _context.Parts
+            var lowStockParts = await _context.Parts
                 .Where(p => p.Stock <= p.MinStock)
                 .ToListAsync();
+
+            // Create a wrapper object to ensure proper XML serialization
+            var wrapper = new PartsWrapper(lowStockParts);
+            return Ok(wrapper);
         }
 
         private bool PartExists(int id)
