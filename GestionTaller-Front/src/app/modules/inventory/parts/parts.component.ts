@@ -14,17 +14,8 @@ import { CurrencyPipe, NgClass } from "@angular/common";
 import { Tag } from "primeng/tag";
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-
-interface Part {
-  id: number;
-  name: string;
-  category: string;
-  sku: string;
-  price: number;
-  stock: number;
-  minStock: number;
-  supplier: string;
-}
+import { InventoryService, Part } from '../../../core/inventory.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-parts',
@@ -59,63 +50,13 @@ export class PartsComponent implements OnInit {
 
   constructor(
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private inventoryService: InventoryService
   ) {}
 
   ngOnInit() {
-    // Simular datos que vendrían del backend
-    this.parts = [
-      {
-        id: 1,
-        name: 'Filtro de aceite',
-        category: 'filtros',
-        sku: 'FIL-001',
-        price: 15.99,
-        stock: 45,
-        minStock: 10,
-        supplier: 'AutoPartes S.A.'
-      },
-      {
-        id: 2,
-        name: 'Pastillas de freno',
-        category: 'frenos',
-        sku: 'FRE-002',
-        price: 45.50,
-        stock: 20,
-        minStock: 5,
-        supplier: 'Frenos Seguros Inc.'
-      },
-      {
-        id: 3,
-        name: 'Batería 12V',
-        category: 'electricidad',
-        sku: 'BAT-003',
-        price: 89.99,
-        stock: 15,
-        minStock: 3,
-        supplier: 'ElectroAuto'
-      },
-      {
-        id: 4,
-        name: 'Amortiguador delantero',
-        category: 'suspension',
-        sku: 'SUS-004',
-        price: 120.00,
-        stock: 8,
-        minStock: 2,
-        supplier: 'Suspensiones Pro'
-      },
-      {
-        id: 5,
-        name: 'Aceite de motor 5W-30',
-        category: 'lubricantes',
-        sku: 'LUB-005',
-        price: 25.99,
-        stock: 50,
-        minStock: 10,
-        supplier: 'LubriMax'
-      }
-    ];
+    // Cargar datos desde el backend
+    this.loadParts();
 
     this.categories = [
       { label: 'Filtros', value: 'filtros' },
@@ -135,15 +76,43 @@ export class PartsComponent implements OnInit {
     this.partDialog = true;
   }
 
+  loadParts() {
+    this.inventoryService.getParts().subscribe({
+      next: (data) => {
+        this.parts = data;
+      },
+      error: (error) => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar repuestos', life: 3000 });
+        console.error('Error loading parts', error);
+      }
+    });
+  }
+
   deleteSelectedParts() {
     this.confirmationService.confirm({
       message: '¿Está seguro de que desea eliminar los repuestos seleccionados?',
       header: 'Confirmar',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.parts = this.parts.filter(val => !this.selectedParts.includes(val));
-        this.selectedParts = [];
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Repuestos eliminados', life: 3000 });
+        // Crear un array de observables para eliminar cada repuesto
+        const deleteObservables = this.selectedParts.map(part => 
+          this.inventoryService.deletePart(part.id)
+        );
+
+        // Usar forkJoin para esperar a que todas las eliminaciones se completen
+        if (deleteObservables.length > 0) {
+          forkJoin(deleteObservables).subscribe({
+            next: () => {
+              this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Repuestos eliminados', life: 3000 });
+              this.selectedParts = [];
+              this.loadParts();
+            },
+            error: (error) => {
+              this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al eliminar repuestos', life: 3000 });
+              console.error('Error deleting parts', error);
+            }
+          });
+        }
       }
     });
   }
@@ -159,9 +128,16 @@ export class PartsComponent implements OnInit {
       header: 'Confirmar',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.parts = this.parts.filter(val => val.id !== part.id);
-        this.part = this.initializeNewPart();
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Repuesto eliminado', life: 3000 });
+        this.inventoryService.deletePart(part.id).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Repuesto eliminado', life: 3000 });
+            this.loadParts();
+          },
+          error: (error) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al eliminar repuesto', life: 3000 });
+            console.error('Error deleting part', error);
+          }
+        });
       }
     });
   }
@@ -177,19 +153,30 @@ export class PartsComponent implements OnInit {
     if (this.part.name.trim()) {
       if (this.part.id) {
         // Actualizar repuesto existente
-        const index = this.findIndexById(this.part.id);
-        if (index !== -1) {
-          this.parts[index] = this.part;
-          this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Repuesto actualizado', life: 3000 });
-        }
+        this.inventoryService.updatePart(this.part).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Repuesto actualizado', life: 3000 });
+            this.loadParts();
+          },
+          error: (error) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar repuesto', life: 3000 });
+            console.error('Error updating part', error);
+          }
+        });
       } else {
         // Crear nuevo repuesto
-        this.part.id = this.createId();
-        this.parts.push(this.part);
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Repuesto creado', life: 3000 });
+        this.inventoryService.createPart(this.part).subscribe({
+          next: (part) => {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Repuesto creado', life: 3000 });
+            this.loadParts();
+          },
+          error: (error) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al crear repuesto', life: 3000 });
+            console.error('Error creating part', error);
+          }
+        });
       }
 
-      this.parts = [...this.parts];
       this.partDialog = false;
       this.part = this.initializeNewPart();
     }

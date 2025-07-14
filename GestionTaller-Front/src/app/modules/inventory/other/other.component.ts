@@ -14,17 +14,8 @@ import { TextareaModule } from 'primeng/textarea';
 import { CurrencyPipe, NgClass } from "@angular/common";
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-
-interface InventoryItem {
-  id: number;
-  name: string;
-  category: string;
-  description: string;
-  quantity: number;
-  location: string;
-  purchaseDate: Date;
-  purchasePrice: number;
-}
+import { InventoryService, InventoryItem } from '../../../core/inventory.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-other',
@@ -59,63 +50,13 @@ export class OtherComponent implements OnInit {
 
   constructor(
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private inventoryService: InventoryService
   ) {}
 
   ngOnInit() {
-    // Simular datos que vendrían del backend
-    this.items = [
-      {
-        id: 1,
-        name: 'Compresor de aire',
-        category: 'herramientas',
-        description: 'Compresor de aire para taller',
-        quantity: 2,
-        location: 'Almacén principal',
-        purchaseDate: new Date('2023-01-15'),
-        purchasePrice: 350.00
-      },
-      {
-        id: 2,
-        name: 'Kit de limpieza de interiores',
-        category: 'limpieza',
-        description: 'Kit completo para limpieza de interiores de vehículos',
-        quantity: 5,
-        location: 'Estante B3',
-        purchaseDate: new Date('2023-03-22'),
-        purchasePrice: 45.99
-      },
-      {
-        id: 3,
-        name: 'Gato hidráulico',
-        category: 'herramientas',
-        description: 'Gato hidráulico de 3 toneladas',
-        quantity: 3,
-        location: 'Área de servicio',
-        purchaseDate: new Date('2022-11-05'),
-        purchasePrice: 120.50
-      },
-      {
-        id: 4,
-        name: 'Cera para automóviles',
-        category: 'limpieza',
-        description: 'Cera de carnauba premium',
-        quantity: 15,
-        location: 'Estante A2',
-        purchaseDate: new Date('2023-05-10'),
-        purchasePrice: 18.75
-      },
-      {
-        id: 5,
-        name: 'Juego de llaves',
-        category: 'herramientas',
-        description: 'Juego de llaves métricas y estándar',
-        quantity: 4,
-        location: 'Caja de herramientas',
-        purchaseDate: new Date('2023-02-18'),
-        purchasePrice: 85.00
-      }
-    ];
+    // Cargar datos desde el backend
+    this.loadInventoryItems();
 
     this.categories = [
       { label: 'Herramientas', value: 'herramientas' },
@@ -133,15 +74,43 @@ export class OtherComponent implements OnInit {
     this.itemDialog = true;
   }
 
+  loadInventoryItems() {
+    this.inventoryService.getInventoryItems().subscribe({
+      next: (data) => {
+        this.items = data;
+      },
+      error: (error) => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar artículos', life: 3000 });
+        console.error('Error loading inventory items', error);
+      }
+    });
+  }
+
   deleteSelectedItems() {
     this.confirmationService.confirm({
       message: '¿Está seguro de que desea eliminar los artículos seleccionados?',
       header: 'Confirmar',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.items = this.items.filter(val => !this.selectedItems.includes(val));
-        this.selectedItems = [];
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Artículos eliminados', life: 3000 });
+        // Crear un array de observables para eliminar cada artículo
+        const deleteObservables = this.selectedItems.map(item => 
+          this.inventoryService.deleteInventoryItem(item.id)
+        );
+
+        // Usar forkJoin para esperar a que todas las eliminaciones se completen
+        if (deleteObservables.length > 0) {
+          forkJoin(deleteObservables).subscribe({
+            next: () => {
+              this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Artículos eliminados', life: 3000 });
+              this.selectedItems = [];
+              this.loadInventoryItems();
+            },
+            error: (error) => {
+              this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al eliminar artículos', life: 3000 });
+              console.error('Error deleting inventory items', error);
+            }
+          });
+        }
       }
     });
   }
@@ -157,9 +126,16 @@ export class OtherComponent implements OnInit {
       header: 'Confirmar',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.items = this.items.filter(val => val.id !== item.id);
-        this.item = this.initializeNewItem();
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Artículo eliminado', life: 3000 });
+        this.inventoryService.deleteInventoryItem(item.id).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Artículo eliminado', life: 3000 });
+            this.loadInventoryItems();
+          },
+          error: (error) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al eliminar artículo', life: 3000 });
+            console.error('Error deleting inventory item', error);
+          }
+        });
       }
     });
   }
@@ -175,19 +151,30 @@ export class OtherComponent implements OnInit {
     if (this.item.name.trim()) {
       if (this.item.id) {
         // Actualizar artículo existente
-        const index = this.findIndexById(this.item.id);
-        if (index !== -1) {
-          this.items[index] = this.item;
-          this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Artículo actualizado', life: 3000 });
-        }
+        this.inventoryService.updateInventoryItem(this.item).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Artículo actualizado', life: 3000 });
+            this.loadInventoryItems();
+          },
+          error: (error) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar artículo', life: 3000 });
+            console.error('Error updating inventory item', error);
+          }
+        });
       } else {
         // Crear nuevo artículo
-        this.item.id = this.createId();
-        this.items.push(this.item);
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Artículo creado', life: 3000 });
+        this.inventoryService.createInventoryItem(this.item).subscribe({
+          next: (item) => {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Artículo creado', life: 3000 });
+            this.loadInventoryItems();
+          },
+          error: (error) => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al crear artículo', life: 3000 });
+            console.error('Error creating inventory item', error);
+          }
+        });
       }
 
-      this.items = [...this.items];
       this.itemDialog = false;
       this.item = this.initializeNewItem();
     }

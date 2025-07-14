@@ -106,7 +106,7 @@ export class InventoryService {
     let xml = `<?xml version="1.0" encoding="UTF-8"?><${rootName}>`;
 
     for (const prop in obj) {
-      if (obj.hasOwnProperty(prop) && prop !== 'id') {
+      if (obj.hasOwnProperty(prop)) {
         const value = obj[prop];
         if (value !== null && value !== undefined) {
           if (typeof value === 'object' && !(value instanceof Date)) {
