@@ -11,7 +11,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { SelectModule } from 'primeng/select';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
-import { CurrencyPipe, NgClass } from "@angular/common";
+import { CurrencyPipe, NgClass, DatePipe } from "@angular/common";
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InventoryService, InventoryItem } from '../../../core/inventory.service';
@@ -34,6 +34,7 @@ import { forkJoin } from 'rxjs';
     TextareaModule,
     NgClass,
     CurrencyPipe,
+    DatePipe,
     IconFieldModule,
     InputIconModule
   ],
@@ -209,7 +210,17 @@ export class OtherComponent implements OnInit {
     };
   }
 
-  formatDate(date: Date): string {
-    return date.toLocaleDateString();
+  formatDate(date: Date | string): string {
+    if (!date) {
+      return '';
+    }
+
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      return dateObj.toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
+    }
   }
 }

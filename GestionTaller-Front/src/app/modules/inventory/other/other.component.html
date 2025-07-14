@@ -26,7 +26,7 @@
     >
       <ng-template pTemplate="caption">
         <div class="flex justify-between items-center">
-          <h5 class="m-0">Inventario Misceláneo</h5>
+          <h5 class="m-0 text-lg font-medium">Inventario Misceláneo</h5>
           <p-iconfield>
             <p-inputicon styleClass="pi pi-search"></p-inputicon>
             <input pInputText type="text" placeholder="Buscar..." (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
@@ -50,11 +50,17 @@
       </ng-template>
       <ng-template pTemplate="body" let-item>
         <tr>
-          <td>
+          <td style="width: 3rem">
             <p-tableCheckbox [value]="item"></p-tableCheckbox>
           </td>
           <td>{{item.name}}</td>
-          <td>{{item.category}}</td>
+          <td>
+            <span [class]="'item-badge category-' + item.category">{{item.category === 'herramientas' ? 'Herramientas' : 
+              item.category === 'limpieza' ? 'Limpieza' : 
+              item.category === 'equipamiento' ? 'Equipamiento' : 
+              item.category === 'seguridad' ? 'Seguridad' : 
+              item.category === 'oficina' ? 'Oficina' : 'Otros'}}</span>
+          </td>
           <td>{{item.description}}</td>
           <td>{{item.quantity}}</td>
           <td>{{item.location}}</td>
@@ -120,7 +126,7 @@
                     <label for="quantity" class="block font-medium mb-2">Cantidad</label>
                     <p-iconfield class="w-full">
                         <p-inputicon styleClass="pi pi-hashtag"></p-inputicon>
-                        <p-inputNumber id="quantity" [(ngModel)]="item.quantity" styleClass="w-full"></p-inputNumber>
+                        <input type="number" pInputText id="quantity" [(ngModel)]="item.quantity" class="w-full p-3" />
                     </p-iconfield>
                 </div>
             </div>
@@ -144,7 +150,7 @@
                     <label for="purchaseDate" class="block font-medium mb-2">Fecha de Compra</label>
                     <p-iconfield class="w-full">
                         <p-inputicon styleClass="pi pi-calendar"></p-inputicon>
-                        <input type="date" pInputText id="purchaseDate" [(ngModel)]="item.purchaseDate" class="w-full p-3" />
+                        <input type="date" pInputText id="purchaseDate" [ngModel]="item.purchaseDate | date:'yyyy-MM-dd'" (ngModelChange)="item.purchaseDate = $event" class="w-full p-3" />
                     </p-iconfield>
                 </div>
             </div>
@@ -154,7 +160,7 @@
                     <label for="purchasePrice" class="block font-medium mb-2">Precio de Compra ($)</label>
                     <p-iconfield class="w-full">
                         <p-inputicon styleClass="pi pi-dollar"></p-inputicon>
-                        <p-inputNumber id="purchasePrice" [(ngModel)]="item.purchasePrice" mode="currency" currency="USD" locale="en-US" styleClass="w-full"></p-inputNumber>
+                        <input type="number" pInputText id="purchasePrice" [(ngModel)]="item.purchasePrice" class="w-full p-3" />
                     </p-iconfield>
                 </div>
             </div>
@@ -168,3 +174,43 @@
     </ng-template>
   </p-dialog>
 </div>
+
+<style>
+  .item-badge {
+    border-radius: 2px;
+    padding: 0.25em 0.5rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: .3px;
+  }
+
+  .category-herramientas {
+    background-color: #C8E6C9;
+    color: #256029;
+  }
+
+  .category-limpieza {
+    background-color: #B3E5FC;
+    color: #23547B;
+  }
+
+  .category-equipamiento {
+    background-color: #FEEDAF;
+    color: #8A5340;
+  }
+
+  .category-seguridad {
+    background-color: #FFCDD2;
+    color: #C63737;
+  }
+
+  .category-oficina {
+    background-color: #E1BEE7;
+    color: #6A1B9A;
+  }
+
+  .category-otros {
+    background-color: #D1C4E9;
+    color: #4527A0;
+  }
+</style>
