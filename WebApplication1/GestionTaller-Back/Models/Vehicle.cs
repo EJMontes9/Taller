@@ -6,6 +6,7 @@ namespace GestionTaller_Back.Models
 {
     [Serializable]
     [XmlRoot("Vehicle")]
+    [XmlType("Vehicle")]
     public class Vehicle
     {
         [Key]

@@ -6,6 +6,7 @@ namespace GestionTaller_Back.Models
 {
     [Serializable]
     [XmlRoot("Cliente")]
+    [XmlType("Cliente")]
     public class Cliente
     {
         [Key]

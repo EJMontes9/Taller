@@ -6,6 +6,7 @@ namespace GestionTaller_Back.Models
 {
     [Serializable]
     [XmlRoot("Part")]
+    [XmlType("Part")]
     public class Part
     {
         [Key]

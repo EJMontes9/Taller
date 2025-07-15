@@ -6,6 +6,7 @@ namespace GestionTaller_Back.Models
 {
     [Serializable]
     [XmlRoot("InventoryItem")]
+    [XmlType("InventoryItem")]
     public class InventoryItem
     {
         [Key]
