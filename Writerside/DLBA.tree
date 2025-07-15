@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+
+<instance-profile id="DLBA"
+                 name="doc_Taller"
+                 start-page="introduccion.md">
+
+    <toc-element topic="introduccion.md">
+        <toc-element topic="aprobacion-tema.md"/>
+        <toc-element topic="descripcion-general.md"/>
+        <toc-element topic="arquitectura-sistema.md"/>
+        <toc-element topic="tecnologias-utilizadas.md"/>
+    </toc-element>
+    <toc-element topic="manual-tecnico-backend.md">
+        <toc-element topic="estructura-proyecto-backend.md"/>
+        <toc-element topic="configuracion-entorno-backend.md">
+            <toc-element topic="requisitos-sistema-backend.md"/>
+            <toc-element topic="configuracion-docker-backend.md"/>
+            <toc-element topic="variables-entorno-backend.md"/>
+        </toc-element>
+        <toc-element topic="documentacion-apis-modulo.md">
+            <toc-element topic="autenticacion-autorizacion.md"/>
+            <toc-element topic="modulo-clientes.md"/>
+            <toc-element topic="modulo-ventas.md"/>
+            <toc-element topic="modulo-vehiculos.md"/>
+            <toc-element topic="modulo-repuestos.md"/>
+            <toc-element topic="modulo-inventario.md"/>
+        </toc-element>
+    </toc-element>
+    <toc-element topic="manual-tecnico-frontend.md">
+        <toc-element topic="estructura-proyecto-frontend.md"/>
+        <toc-element topic="configuracion-entorno-frontend.md"/>
+        <toc-element topic="documentacion-modulos-frontend.md">
+            <toc-element topic="modulo-autenticacion-frontend.md"/>
+            <toc-element topic="modulo-inventario-frontend.md"/>
+            <toc-element topic="modulo-reportes-frontend.md"/>
+            <toc-element topic="modulo-ventas-frontend.md"/>
+            <toc-element topic="modulo-servicio-frontend.md"/>
+        </toc-element>
+    </toc-element>
+    <toc-element topic="base-de-datos.md">
+        <toc-element topic="modelo-de-datos.md"/>
+        <toc-element topic="diccionario-de-datos.md"/>
+        <toc-element topic="procedimientos-almacenados.md">
+            <toc-element topic="sp-get-client-vehicles.md"/>
+            <toc-element topic="sp-update-inventory.md"/>
+            <toc-element topic="sp-register-sale.md"/>
+            <toc-element topic="sp-generate-monthly-report.md"/>
+        </toc-element>
+    </toc-element>
+    <toc-element topic="manual-de-usuario.md">
+        <toc-element topic="acceso-al-sistema.md"/>
+        <toc-element topic="interfaz-de-usuario.md"/>
+        <toc-element topic="guias-por-modulo.md">
+            <toc-element topic="modulo-autenticacion-usuario.md"/>
+            <toc-element topic="modulo-clientes-usuario.md"/>
+            <toc-element topic="modulo-inventario-usuario.md"/>
+            <toc-element topic="modulo-ventas-usuario.md"/>
+            <toc-element topic="modulo-servicio-usuario.md"/>
+            <toc-element topic="modulo-reportes-usuario.md"/>
+        </toc-element>
+    </toc-element>
+    <toc-element topic="despliegue-y-configuracion.md">
+        <toc-element topic="requisitos-infraestructura.md"/>
+        <toc-element topic="proceso-instalacion.md"/>
+        <toc-element topic="configuracion-docker.md"/>
+        <toc-element topic="variables-entorno.md"/>
+        <toc-element topic="guia-mantenimiento.md"/>
+    </toc-element>
+    <toc-element topic="anexos.md">
+        <toc-element topic="glosario-terminos.md"/>
+        <toc-element topic="referencias.md"/>
+        <toc-element topic="control-versiones.md"/>
+    </toc-element>
+</instance-profile>
