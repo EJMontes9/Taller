@@ -1,8 +1,8 @@
-﻿# 2.3. Documentación de APIs por Módulo
+# 2.3. Documentación de APIs por Módulo
 
 Esta sección proporciona documentación detallada de las APIs disponibles en el sistema de Gestión de Taller, organizadas por módulos funcionales. Para cada módulo, se describen los endpoints disponibles, los modelos de datos utilizados, los controladores que implementan la lógica y los servicios asociados.
 
-La API del sistema está construida siguiendo los principios RESTful, utilizando los verbos HTTP estándar (GET, POST, PUT, DELETE) para las operaciones CRUD (Crear, Leer, Actualizar, Eliminar) sobre los recursos del sistema. Todas las comunicaciones con la API se realizan mediante XML, tanto para las solicitudes como para las respuestas.
+La API del sistema está construida siguiendo los principios RESTful, utilizando los verbos HTTP estándar (GET, POST, PUT, DELETE) para las operaciones CRUD (Crear, Leer, Actualizar, Eliminar) sobre los recursos del sistema.
 
 ## Estructura de la Documentación
 
@@ -15,7 +15,7 @@ Para cada módulo, la documentación sigue la siguiente estructura:
 
 ## Autenticación y Autorización
 
-Todos los endpoints protegidos requieren autenticación mediante tokens XML. Para obtener un token, se debe utilizar el endpoint de autenticación descrito en la sección [Autenticación y Autorización](autenticacion-autorizacion.md).
+Todos los endpoints protegidos requieren autenticación mediante tokens JWT (JSON Web Tokens). Para obtener un token, se debe utilizar el endpoint de autenticación descrito en la sección [Autenticación y Autorización](autenticacion-autorizacion.md).
 
 ## Módulos Disponibles
 

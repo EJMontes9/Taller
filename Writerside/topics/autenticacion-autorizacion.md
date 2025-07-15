@@ -1,6 +1,6 @@
-﻿# 2.3.1. Autenticación y Autorización
+# 2.3.1. Autenticación y Autorización
 
-Esta sección documenta el módulo de Autenticación y Autorización del sistema de Gestión de Taller, que proporciona funcionalidades para el registro de usuarios, inicio de sesión, gestión de tokens XML y control de acceso basado en roles.
+Esta sección documenta el módulo de Autenticación y Autorización del sistema de Gestión de Taller, que proporciona funcionalidades para el registro de usuarios, inicio de sesión, gestión de tokens JWT y control de acceso basado en roles.
 
 ## Endpoints
 
@@ -11,26 +11,26 @@ Esta sección documenta el módulo de Autenticación y Autorización del sistema
 **Descripción**: Registra un nuevo usuario en el sistema.
 
 **Cuerpo de la Solicitud**:
-```xml
-<RegisterRequest>
-  <username>string</username>
-  <email>string</email>
-  <password>string</password>
-  <fullName>string</fullName>
-  <role>string</role> <!-- "Admin", "Technician", "Receptionist", "Salesperson" -->
-</RegisterRequest>
+```json
+{
+  "username": "string",
+  "email": "string",
+  "password": "string",
+  "fullName": "string",
+  "role": "string" // "Admin", "Technician", "Receptionist", "Salesperson"
+}
 ```
 
 **Respuesta Exitosa (200 OK)**:
-```xml
-<RegisterResponse>
-  <id>guid</id>
-  <username>string</username>
-  <email>string</email>
-  <fullName>string</fullName>
-  <role>string</role>
-  <createdAt>datetime</createdAt>
-</RegisterResponse>
+```json
+{
+  "id": "guid",
+  "username": "string",
+  "email": "string",
+  "fullName": "string",
+  "role": "string",
+  "createdAt": "datetime"
+}
 ```
 
 **Respuestas de Error**:
@@ -41,29 +41,29 @@ Esta sección documenta el módulo de Autenticación y Autorización del sistema
 
 **Endpoint**: `POST /api/auth/login`
 
-**Descripción**: Autentica un usuario y devuelve un token XML.
+**Descripción**: Autentica un usuario y devuelve un token JWT.
 
 **Cuerpo de la Solicitud**:
-```xml
-<LoginRequest>
-  <username>string</username>
-  <password>string</password>
-</LoginRequest>
+```json
+{
+  "username": "string",
+  "password": "string"
+}
 ```
 
 **Respuesta Exitosa (200 OK)**:
-```xml
-<LoginResponse>
-  <token>string</token>
-  <expiration>datetime</expiration>
-  <user>
-    <id>guid</id>
-    <username>string</username>
-    <email>string</email>
-    <fullName>string</fullName>
-    <role>string</role>
-  </user>
-</LoginResponse>
+```json
+{
+  "token": "string",
+  "expiration": "datetime",
+  "user": {
+    "id": "guid",
+    "username": "string",
+    "email": "string",
+    "fullName": "string",
+    "role": "string"
+  }
+}
 ```
 
 **Respuestas de Error**:
@@ -74,21 +74,21 @@ Esta sección documenta el módulo de Autenticación y Autorización del sistema
 
 **Endpoint**: `POST /api/auth/refresh-token`
 
-**Descripción**: Renueva un token XML existente.
+**Descripción**: Renueva un token JWT existente.
 
 **Cuerpo de la Solicitud**:
-```xml
-<RefreshTokenRequest>
-  <token>string</token>
-</RefreshTokenRequest>
+```json
+{
+  "token": "string"
+}
 ```
 
 **Respuesta Exitosa (200 OK)**:
-```xml
-<RefreshTokenResponse>
-  <token>string</token>
-  <expiration>datetime</expiration>
-</RefreshTokenResponse>
+```json
+{
+  "token": "string",
+  "expiration": "datetime"
+}
 ```
 
 **Respuestas de Error**:
@@ -165,19 +165,19 @@ El `AuthController` maneja todas las operaciones relacionadas con la autenticaci
 public class AuthController : ControllerBase
 {
     // Constructor y dependencias
-
+    
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto registerDto)
     {
         // Implementación del registro de usuario
     }
-
+    
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
     {
         // Implementación del inicio de sesión
     }
-
+    
     [HttpPost("refresh-token")]
     public IActionResult RefreshToken([FromBody] RefreshTokenDto refreshTokenDto)
     {
@@ -198,17 +198,17 @@ El sistema utiliza un helper para la generación y validación de tokens JWT:
 public class JwtHelper
 {
     private readonly IConfiguration _configuration;
-
+    
     public JwtHelper(IConfiguration configuration)
     {
         _configuration = configuration;
     }
-
+    
     public string GenerateToken(User user)
     {
         // Implementación de la generación de token
     }
-
+    
     public bool ValidateToken(string token, out ClaimsPrincipal principal)
     {
         // Implementación de la validación de token
