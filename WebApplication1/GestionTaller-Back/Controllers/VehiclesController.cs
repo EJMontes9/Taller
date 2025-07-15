@@ -15,7 +15,7 @@ namespace GestionTaller_Back.Controllers
     // Wrapper classes for XML serialization
     public class VehicleWrapper
     {
-        public Vehicle Vehicle { get; set; }
+        public Vehicle? Vehicle { get; set; }
 
         public VehicleWrapper() { }
 

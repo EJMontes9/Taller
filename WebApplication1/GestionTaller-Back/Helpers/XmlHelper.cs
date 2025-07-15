@@ -6,6 +6,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 using GestionTaller_Back.Models;
+using GestionTaller_Back.Models.DTOs;
 using GestionTaller_Back.Controllers;
 
 namespace GestionTaller_Back.Helpers
@@ -37,6 +38,11 @@ namespace GestionTaller_Back.Helpers
                         typeof(InventoryItem),
                         typeof(Cliente),
                         typeof(User),
+                        // Auth DTOs
+                        typeof(AuthResponseDTO),
+                        typeof(UserDTO),
+                        typeof(LoginRequestDTO),
+                        typeof(RegisterRequestDTO),
                         // Wrapper classes from controllers
                         typeof(VehicleWrapper),
                         typeof(VehiclesWrapper),
@@ -70,7 +76,7 @@ namespace GestionTaller_Back.Helpers
         /// <summary>
         /// Deserializes an XML string to an object
         /// </summary>
-        public static T Deserialize<T>(string xml) where T : class
+        public static T? Deserialize<T>(string xml) where T : class
         {
             if (string.IsNullOrEmpty(xml))
                 return null;
@@ -114,6 +120,11 @@ namespace GestionTaller_Back.Helpers
                     typeof(Cliente),
                     typeof(User),
                     typeof(XmlSerializerWrapper<T>),
+                    // Auth DTOs
+                    typeof(AuthResponseDTO),
+                    typeof(UserDTO),
+                    typeof(LoginRequestDTO),
+                    typeof(RegisterRequestDTO),
                     // Wrapper classes from controllers
                     typeof(VehicleWrapper),
                     typeof(VehiclesWrapper),

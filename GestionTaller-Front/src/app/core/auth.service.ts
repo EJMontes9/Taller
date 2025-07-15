@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
 export interface User {
@@ -47,7 +47,20 @@ export class AuthService {
   }
 
   login(username: string, password: string): Observable<User> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, { username, password })
+    // Create XML for the request
+    const xmlData = `<?xml version="1.0" encoding="UTF-8"?>
+<LoginRequest>
+  <username>${username}</username>
+  <password>${password}</password>
+</LoginRequest>`;
+
+    // Configure headers for XML
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/xml',
+      'Accept': 'application/xml'
+    });
+
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, xmlData, { headers })
       .pipe(
         tap(response => {
           if (response.success) {
@@ -68,7 +81,22 @@ export class AuthService {
   }
 
   register(registerData: RegisterRequest): Observable<User> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, registerData)
+    // Create XML for the request
+    const xmlData = `<?xml version="1.0" encoding="UTF-8"?>
+<RegisterRequest>
+  <username>${registerData.username}</username>
+  <password>${registerData.password}</password>
+  <name>${registerData.name}</name>
+  <email>${registerData.email}</email>
+</RegisterRequest>`;
+
+    // Configure headers for XML
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/xml',
+      'Accept': 'application/xml'
+    });
+
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, xmlData, { headers })
       .pipe(
         tap(response => {
           if (response.success) {

@@ -15,7 +15,7 @@ namespace GestionTaller_Back.Controllers
     // Wrapper classes for XML serialization
     public class ClienteWrapper
     {
-        public Cliente Cliente { get; set; }
+        public Cliente? Cliente { get; set; }
 
         public ClienteWrapper() { }
 

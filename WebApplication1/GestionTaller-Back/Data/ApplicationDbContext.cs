@@ -17,6 +17,8 @@ namespace GestionTaller_Back.Data
         public DbSet<Vehicle> Vehicles { get; set; }
         public DbSet<Part> Parts { get; set; }
         public DbSet<InventoryItem> InventoryItems { get; set; }
+        public DbSet<Sale> Sales { get; set; }
+        public DbSet<SalePart> SaleParts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

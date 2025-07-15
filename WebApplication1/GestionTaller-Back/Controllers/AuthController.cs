@@ -1,4 +1,4 @@
-﻿using GestionTaller_Back.Data;
+using GestionTaller_Back.Data;
 using GestionTaller_Back.Models;
 using GestionTaller_Back.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +30,8 @@ namespace GestionTaller_Back.Controllers
         }
 
         [HttpPost("login")]
+        [Consumes("application/xml")]
+        [Produces("application/xml")]
         public async Task<ActionResult<AuthResponseDTO>> Login(LoginRequestDTO loginRequest)
         {
             _logger.LogInformation("Login attempt for user: {Username}", loginRequest.Username);
@@ -81,6 +83,8 @@ namespace GestionTaller_Back.Controllers
         }
 
         [HttpPost("register")]
+        [Consumes("application/xml")]
+        [Produces("application/xml")]
         public async Task<ActionResult<AuthResponseDTO>> Register(RegisterRequestDTO registerRequest)
         {
             _logger.LogInformation("Registration attempt for user: {Username}", registerRequest.Username);

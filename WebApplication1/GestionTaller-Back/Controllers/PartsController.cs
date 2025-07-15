@@ -15,7 +15,7 @@ namespace GestionTaller_Back.Controllers
     // Wrapper classes for XML serialization
     public class PartWrapper
     {
-        public Part Part { get; set; }
+        public Part? Part { get; set; }
 
         public PartWrapper() { }
 

@@ -65,7 +65,7 @@ namespace GestionTaller_Back.Formatters
     // Helper method for non-generic deserialization
     public static class XmlHelperExtensions
     {
-        public static object Deserialize(string xml, Type type)
+        public static object? Deserialize(string xml, Type type)
         {
             if (string.IsNullOrEmpty(xml))
                 return null;

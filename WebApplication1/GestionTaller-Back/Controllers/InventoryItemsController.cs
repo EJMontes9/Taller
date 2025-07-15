@@ -15,7 +15,7 @@ namespace GestionTaller_Back.Controllers
     // Wrapper classes for XML serialization
     public class InventoryItemWrapper
     {
-        public InventoryItem InventoryItem { get; set; }
+        public InventoryItem? InventoryItem { get; set; }
 
         public InventoryItemWrapper() { }
 

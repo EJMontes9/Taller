@@ -60,8 +60,8 @@ namespace GestionTaller_Back.Formatters
             else if (context.Object is IEnumerable enumerable && !(context.Object is string))
             {
                 // Get the element type of the collection
-                Type elementType = context.ObjectType.GetElementType();
-                if (elementType == null && context.ObjectType.IsGenericType)
+                Type? elementType = context.ObjectType?.GetElementType();
+                if (elementType == null && context.ObjectType?.IsGenericType == true)
                 {
                     elementType = context.ObjectType.GetGenericArguments()[0];
                 }
@@ -71,12 +71,21 @@ namespace GestionTaller_Back.Formatters
                 {
                     // Use reflection to call the generic SerializeList method
                     var method = typeof(XmlHelper).GetMethod("SerializeList");
-                    var genericMethod = method.MakeGenericMethod(elementType);
+                    if (method != null)
+                    {
+                        var genericMethod = method.MakeGenericMethod(elementType);
 
-                    // Get the root element name from the element type
-                    string rootElementName = elementType.Name + "s";
+                        // Get the root element name from the element type
+                        string rootElementName = elementType.Name + "s";
 
-                    xmlString = (string)genericMethod.Invoke(null, new object[] { enumerable, rootElementName });
+                        var result = genericMethod.Invoke(null, new object[] { enumerable, rootElementName });
+                        xmlString = result?.ToString() ?? string.Empty;
+                    }
+                    else
+                    {
+                        // Fallback to standard serialization
+                        xmlString = XmlHelper.Serialize(context.Object);
+                    }
                 }
                 else
                 {
@@ -87,7 +96,7 @@ namespace GestionTaller_Back.Formatters
             else
             {
                 // For single objects, use the standard serializer
-                xmlString = XmlHelper.Serialize(context.Object);
+                xmlString = XmlHelper.Serialize(context.Object ?? new object());
             }
 
             await response.WriteAsync(xmlString, selectedEncoding);
