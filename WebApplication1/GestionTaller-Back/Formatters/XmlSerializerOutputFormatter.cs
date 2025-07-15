@@ -96,7 +96,36 @@ namespace GestionTaller_Back.Formatters
             else
             {
                 // For single objects, use the standard serializer
-                xmlString = XmlHelper.Serialize(context.Object ?? new object());
+                // If the object is an AuthResponseDTO or RegisterRequestDTO, ensure it's serialized with the correct root element
+                if (context.Object is Models.DTOs.AuthResponseDTO authResponse)
+                {
+                    var serializer = new XmlSerializer(typeof(Models.DTOs.AuthResponseDTO));
+                    using var stringWriter = new StringWriter();
+                    using var xmlWriter = XmlWriter.Create(stringWriter, new XmlWriterSettings { Indent = true });
+
+                    var namespaces = new XmlSerializerNamespaces();
+                    namespaces.Add(string.Empty, string.Empty); // Remove namespaces
+
+                    serializer.Serialize(xmlWriter, authResponse, namespaces);
+                    xmlString = stringWriter.ToString();
+                }
+                // Also handle RegisterRequestDTO
+                else if (context.Object is Models.DTOs.RegisterRequestDTO registerResponse)
+                {
+                    var serializer = new XmlSerializer(typeof(Models.DTOs.RegisterRequestDTO));
+                    using var stringWriter = new StringWriter();
+                    using var xmlWriter = XmlWriter.Create(stringWriter, new XmlWriterSettings { Indent = true });
+
+                    var namespaces = new XmlSerializerNamespaces();
+                    namespaces.Add(string.Empty, string.Empty); // Remove namespaces
+
+                    serializer.Serialize(xmlWriter, registerResponse, namespaces);
+                    xmlString = stringWriter.ToString();
+                }
+                else
+                {
+                    xmlString = XmlHelper.Serialize(context.Object ?? new object());
+                }
             }
 
             await response.WriteAsync(xmlString, selectedEncoding);

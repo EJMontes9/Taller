@@ -60,8 +60,12 @@ export class AuthService {
       'Accept': 'application/xml'
     });
 
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, xmlData, { headers })
+    return this.http.post(`${this.apiUrl}/auth/login`, xmlData, { 
+      headers, 
+      responseType: 'text' 
+    })
       .pipe(
+        map(xmlResponse => this.parseXmlResponse(xmlResponse)),
         tap(response => {
           if (response.success) {
             // Store token and user in localStorage
@@ -96,8 +100,12 @@ export class AuthService {
       'Accept': 'application/xml'
     });
 
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, xmlData, { headers })
+    return this.http.post(`${this.apiUrl}/auth/register`, xmlData, { 
+      headers, 
+      responseType: 'text' 
+    })
       .pipe(
+        map(xmlResponse => this.parseXmlResponse(xmlResponse)),
         tap(response => {
           if (response.success) {
             // Store token and user in localStorage
@@ -147,5 +155,116 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return !!this.currentUserValue;
+  }
+
+  /**
+   * Parses an XML response string into an AuthResponse object
+   */
+  private parseXmlResponse(xmlString: string): AuthResponse {
+    // Create a new DOMParser
+    const parser = new DOMParser();
+    // Parse the XML string
+    const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+
+    // Check if we have an anyType element (which is the root in the response)
+    const anyTypeElement = xmlDoc.getElementsByTagName('anyType')[0];
+
+    if (anyTypeElement) {
+      // Extract the success value
+      const successElement = anyTypeElement.getElementsByTagName('success')[0];
+      const success = successElement ? successElement.textContent === 'true' : false;
+
+      // Extract the message
+      const messageElement = anyTypeElement.getElementsByTagName('message')[0];
+      const message = messageElement ? messageElement.textContent || '' : '';
+
+      // Extract the token
+      const tokenElement = anyTypeElement.getElementsByTagName('token')[0];
+      const token = tokenElement ? tokenElement.textContent || '' : '';
+
+      // Extract the user information
+      const userElement = anyTypeElement.getElementsByTagName('user')[0];
+      let user: User = {
+        username: '',
+        name: '',
+        role: ''
+      };
+
+      if (userElement) {
+        const usernameElement = userElement.getElementsByTagName('username')[0];
+        const nameElement = userElement.getElementsByTagName('name')[0];
+        const roleElement = userElement.getElementsByTagName('role')[0];
+        const emailElement = userElement.getElementsByTagName('email')[0];
+
+        user = {
+          username: usernameElement ? usernameElement.textContent || '' : '',
+          name: nameElement ? nameElement.textContent || '' : '',
+          role: roleElement ? roleElement.textContent || '' : '',
+          email: emailElement ? emailElement.textContent || '' : undefined
+        };
+      }
+
+      return {
+        success,
+        message,
+        token,
+        user
+      };
+    } else {
+      // If we don't have an anyType element, try to find AuthResponse element
+      const authResponseElement = xmlDoc.getElementsByTagName('AuthResponse')[0];
+
+      if (authResponseElement) {
+        // Extract the success value
+        const successElement = authResponseElement.getElementsByTagName('success')[0];
+        const success = successElement ? successElement.textContent === 'true' : false;
+
+        // Extract the message
+        const messageElement = authResponseElement.getElementsByTagName('message')[0];
+        const message = messageElement ? messageElement.textContent || '' : '';
+
+        // Extract the token
+        const tokenElement = authResponseElement.getElementsByTagName('token')[0];
+        const token = tokenElement ? tokenElement.textContent || '' : '';
+
+        // Extract the user information
+        const userElement = authResponseElement.getElementsByTagName('user')[0];
+        let user: User = {
+          username: '',
+          name: '',
+          role: ''
+        };
+
+        if (userElement) {
+          const usernameElement = userElement.getElementsByTagName('username')[0];
+          const nameElement = userElement.getElementsByTagName('name')[0];
+          const roleElement = userElement.getElementsByTagName('role')[0];
+          const emailElement = userElement.getElementsByTagName('email')[0];
+
+          user = {
+            username: usernameElement ? usernameElement.textContent || '' : '',
+            name: nameElement ? nameElement.textContent || '' : '',
+            role: roleElement ? roleElement.textContent || '' : '',
+            email: emailElement ? emailElement.textContent || '' : undefined
+          };
+        }
+
+        return {
+          success,
+          message,
+          token,
+          user
+        };
+      }
+
+      // If we couldn't find either element, return a default error response
+      console.error('Failed to parse XML response:', xmlString);
+      return {
+        success: false,
+        message: 'Failed to parse server response',
+        token: '',
+        user: { username: '', name: '', role: '' }
+      };
+    }
   }
 }

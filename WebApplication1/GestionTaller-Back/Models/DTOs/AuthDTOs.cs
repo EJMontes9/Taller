@@ -6,6 +6,7 @@ namespace GestionTaller_Back.Models.DTOs
     // Request DTOs
     [Serializable]
     [XmlRoot("LoginRequest")]
+    [XmlType("LoginRequest")]
     public class LoginRequestDTO
     {
         [XmlElement("username")]
@@ -17,6 +18,7 @@ namespace GestionTaller_Back.Models.DTOs
 
     [Serializable]
     [XmlRoot("RegisterRequest")]
+    [XmlType("RegisterRequest")]
     public class RegisterRequestDTO
     {
         [XmlElement("username")]
@@ -35,6 +37,7 @@ namespace GestionTaller_Back.Models.DTOs
     // Response DTOs
     [Serializable]
     [XmlRoot("AuthResponse")]
+    [XmlType("AuthResponse")]
     public class AuthResponseDTO
     {
         [XmlElement("success")]
@@ -52,6 +55,7 @@ namespace GestionTaller_Back.Models.DTOs
 
     [Serializable]
     [XmlRoot("User")]
+    [XmlType("User")]
     public class UserDTO
     {
         [XmlElement("username")]
